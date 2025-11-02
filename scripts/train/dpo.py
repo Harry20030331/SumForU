@@ -1,6 +1,11 @@
 import asyncio
 from dotenv import load_dotenv
 
+import os, sys
+current_dir = os.path.dirname(__file__)
+parent_dir = os.path.abspath(os.path.join(current_dir, os.pardir))
+sys.path.append(parent_dir)
+
 import chz
 from datasets import Dataset, load_dataset
 import numpy as np
@@ -64,24 +69,70 @@ class WinRateVsBaseOnTestEvaluator(SamplingClientEvaluator):
             base_model=base_model_name
         )
         self.max_tokens = max_tokens
-
-    async def __call__(self, sampling_client: tinker.SamplingClient) -> dict[str, float]:
-        """Evaluate the current policy against the base policy.
-        If the current policy wins, it gets a score of 1.0; if the base policy wins, it gets a score of 0.0.
         
+    async def __call__(self, sampling_client: tinker.SamplingClient) -> dict[str, float]:
+        """
+        Evaluate the current policy against the base policy.
+        If the current policy wins, it gets a score of 1.0; if the base policy wins, it gets a score of 0.0.
+
         Args:
             sampling_client: The sampling client for the current policy.
-        
+
         Returns:
             A dictionary with keys "win_rate_vs_base" and "stderr_vs_base".
         """
-        # TODO: Add your code here.
-        # Note that for using the rubric RM to compute the reward for a pair of responses,
-        # you are calling Tinker API to get the model response. You are suggested to make
-        # the calls asynchronously for better efficiency. You can use asyncio.gather to
-        # achieve that.
-        win_rate = 0.0  # placeholder
-        stderr = 0.0  # placeholder
+        prompts = [example["prompt_conversation"] for example in self.test_ds]
+
+        async def get_responses(client: tinker.SamplingClient, prompts: list[str]) -> list[str]:
+            tasks = [
+                client.sample_async(prompt=tinker.types.ModelInput.from_ints(self.policy_renderer.tokenizer.encode(prompt[0]["content"])),
+                              sampling_params=tinker.types.SamplingParams(
+                                  max_tokens=self.max_tokens,
+                                  temperature=0.7,
+                              ),
+                              num_samples=1,
+                              )
+                for prompt in prompts
+            ]
+            responses = await asyncio.gather(*tasks)
+
+            decoded_responses = [
+                self.policy_renderer.tokenizer.decode(response.sequences[0].tokens).strip()
+                for response in responses
+            ]
+
+            return decoded_responses
+
+        current_responses, base_responses = await asyncio.gather(
+            get_responses(sampling_client, prompts),
+            get_responses(self.base_sampling_client, prompts),
+        )
+
+        comparisons = [
+            PrometheusEvalComparison(
+                prompt_conversation=prompt,
+                completion_A=[{"role": "assistant", "content": cur}],
+                completion_B=[{"role": "assistant", "content": base}],
+                rubric="Choose the better assistant response.",
+            )
+            for prompt, cur, base in zip(prompts, current_responses, base_responses)
+        ]
+
+        rm_results = await asyncio.gather(*[self.preference_model(c) for c in comparisons])
+
+        num_wins = 0
+        num_total = len(rm_results)
+        for r in rm_results:
+            if isinstance(r, dict) and "winner" in r:
+                if r["winner"] == "A":
+                    num_wins += 1
+            elif isinstance(r, (int, float)) and r > 0:
+                num_wins += 1
+
+        win_rate = num_wins / num_total if num_total > 0 else 0.0
+        stderr = np.sqrt(win_rate * (1 - win_rate) / num_total) if num_total > 0 else 0.0
+
+        # win_rate, stderr = 0.0, 0.0  # --- IGNORE ---
         return {"win_rate_vs_base": win_rate, "stderr_vs_base": stderr}
 
 
@@ -171,7 +222,9 @@ def build_config(
 def main(
     model_name: str = "Qwen/Qwen3-4B-Instruct-2507",
     reward_model_name: str = "Qwen/Qwen3-30B-A3B-Instruct-2507",
-    reward_model_path: str = "tinker://",  # TODO: add your model path here
+    reward_model_path: str = "tinker://531ab401-d149-4a5a-b8d1-e31e0c55ecf4/sampler_weights/final",
+    # reward_model_name: str = "Qwen/Qwen3-235B-A22B-Instruct-2507",
+    # reward_model_path: str = "tinker://eca405db-28dc-41a1-9f24-2fb5fb5f3349/sampler_weights/final", 
     train_data_path: str = "results/rl_train_data.jsonl",
     test_data_path: str = "results/rl_dev_data.jsonl",
     log_path: str = "results/rl_with_rubric_rm",

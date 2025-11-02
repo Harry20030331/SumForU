@@ -12,7 +12,7 @@ import numpy as np
 import tinker
 from tinker_cookbook import renderers
 from rubric_preference_types import (
-    PrometheusEvalComparison,
+    PrometheusEvalComparison, LabeledPrometheusEvalComparison,
     PrometheusEvalPreferenceModel,
     PrometheusEvalPreferenceModelFromChatRenderer,
 )
@@ -73,7 +73,24 @@ class PrometheusEvalPairwisePreferenceDataset(RLDataset):
     def get_batch(self, index: int) -> list[EnvGroupBuilder]:
         """Get a batch of EnvGroupBuilders for RL training."""
         # TODO: add your code here
-        pass
+        rows = self.train_dataset.select(
+            range(index * self.batch_size, (index + 1) * self.batch_size)
+        )
+        # import pdb; pdb.set_trace()
+        builder_list = [
+            PrometheusEvalPairwisePreferenceGroupBuilder(
+                convo_prefix=row["prompt_conversation"],
+                policy_renderer=self.dataset_builder.renderer,
+                tournament_pattern=self.tournament_pattern,
+                preference_model=self.preference_model,
+                rubric=row["rubric"],
+                reference=row["reference"],
+                num_envs=self.group_size,
+            )
+            for row in rows
+            if row is not None
+        ]
+        return builder_list
 
     def __len__(self) -> int:
         return len(self.train_dataset) // self.batch_size
@@ -108,6 +125,14 @@ class PrometheusEvalPairwisePreferenceRLDatasetBuilder(RLDatasetBuilder):
         ), None
 
 
+def get_pairs(n: int, pattern: TournamentPattern) -> list[tuple[int, int]]:
+    if pattern == TournamentPattern.ALL_PAIRS_BOTH_WAYS:
+        return [(i, j) for i in range(n) for j in range(n) if i != j]
+    elif pattern == TournamentPattern.ALL_PAIRS_ONE_WAY:
+        return [(i, j) for i in range(n) for j in range(i + 1, n)]
+    else:
+        raise ValueError(f"Invalid tournament pattern: {pattern}")
+    
 @dataclass(frozen=True)
 class PrometheusEvalPairwisePreferenceGroupBuilder(EnvGroupBuilder):
     convo_prefix: list[renderers.Message]
@@ -122,7 +147,24 @@ class PrometheusEvalPairwisePreferenceGroupBuilder(EnvGroupBuilder):
         return [
             PreferenceEnv(self.convo_prefix, self.policy_renderer) for _ in range(self.num_envs)
         ]
+    
+    def comparison_reward_for_second_messages(
+        self, message_i: list[renderers.Message], message_j: list[renderers.Message]
+    ) -> PrometheusEvalComparison:
+        comparison = PrometheusEvalComparison(
+            prompt_conversation=self.convo_prefix,
+            completion_A=[m for m in message_i],
+            completion_B=[m for m in message_j],
+            rubric=self.rubric,
+        )
+        return comparison
 
+    async def get_response_message(self, trajectory: Trajectory) -> tuple[list[renderers.Message], bool]:
+        response, is_valid = self.policy_renderer.parse_response(
+            trajectory.transitions[0].ac.tokens
+        )
+        return [response], is_valid
+      
     async def compute_group_rewards(
         self, trajectory_group: list[Trajectory]
     ) -> list[tuple[float, Metrics]]:
@@ -137,4 +179,42 @@ class PrometheusEvalPairwisePreferenceGroupBuilder(EnvGroupBuilder):
         # you are calling Tinker API to get the model response. You are suggested to make
         # the calls asynchronously for better efficiency. You can use asyncio.gather to
         # achieve that.
-        pass
+        # import pdb; pdb.set_trace()
+        assert all(len(trajectory.transitions) == 1 for trajectory in trajectory_group)
+        # Get response from each trajectory
+        response_tuples = await asyncio.gather(
+            *[self.get_response_message(trajectory) for trajectory in trajectory_group]
+        )
+        response_messages, is_valid_list = safezip(*response_tuples)
+
+        comparison_indices_pairs = get_pairs(
+            len(response_messages), self.tournament_pattern
+        )
+
+        j_comparisons = [
+            self.comparison_reward_for_second_messages(
+                message_i=response_messages[i], message_j=response_messages[j]
+            )
+            for i, j in comparison_indices_pairs
+        ]
+
+        j_rewards = await asyncio.gather(*[self.preference_model(c) for c in j_comparisons])
+
+        win_minus_loss_list = [0.0 for _ in range(len(response_messages))]
+        matchup_count = [0 for _ in range(len(response_messages))]
+        for (i, j), j_reward in safezip(comparison_indices_pairs, j_rewards):
+            win_minus_loss_list[j] -= j_reward
+            win_minus_loss_list[i] += j_reward
+            matchup_count[j] += 1
+            matchup_count[i] += 1
+        format_coef = 1.0
+
+        return [
+            (
+                win_minus_loss / matchup_count + format_coef * (float(is_valid) - 1.0),
+                {"win_minus_loss": win_minus_loss / matchup_count, "format": is_valid},
+            )
+            for win_minus_loss, is_valid, matchup_count in safezip(
+                win_minus_loss_list, is_valid_list, matchup_count
+            )
+        ]
