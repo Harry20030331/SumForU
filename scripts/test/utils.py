@@ -107,6 +107,13 @@ def build_prompt():
     active_mode = config.PROMPT_MODE
     prompt_input = config.PROMPT_PATH if active_mode == config.JSON else config.USER_PROMPT
 
+    messages_list = []
+
+    if config.USE_SYSTEM_PROMPT:
+        print("----------- Using system prompt -----------")
+        print( config.SYSTEM_PROMPT)
+        print("-------------------------------------------\n")
+
     if active_mode == config.JSON:
         # check if file exists
         if not os.path.isfile(prompt_input):
@@ -114,8 +121,10 @@ def build_prompt():
 
         with open(prompt_input, "r", encoding="utf-8") as f:
             data = json.load(f)
-
-        messages_list = []
+        print(f"---------------------------------------")
+        print(f"--- Loaded {len(data)} prompts from {prompt_input} ---")
+        print(f"---------------------------------------\n")
+        
         for i, item in enumerate(data):
             input_text = item.get("input", "")
             # print(f"Loaded prompt {i + 1}: {input_text}")
@@ -128,8 +137,6 @@ def build_prompt():
                 messages = [renderers.Message(role="user", content=input_text)]
             messages_list.append(messages)
 
-        return messages_list
-
     elif active_mode == config.DIRECT:
         input_text = prompt_input
         if config.USE_SYSTEM_PROMPT:
@@ -137,21 +144,15 @@ def build_prompt():
                 renderers.Message(role="system", content=config.SYSTEM_PROMPT),
                 renderers.Message(role="user", content=input_text),
             ]
-            print("----------- Using system prompt -----------")
-            print( config.SYSTEM_PROMPT)
-            print("-------------------------------------------\n")
         else:
             messages = [renderers.Message(role="user", content=input_text)]
-
-        print("----------- Using user prompt -------------")
-        print(input_text)
-        print("-------------------------------------------\n")
-
-        return messages
-
+        messages_list.append(messages)
+        
     else:
         raise ValueError("Invalid active_mode. Choose from ['json', 'direct'].")
-    
+
+    return messages_list
+
 
 # update config by arguments
 def update_config_from_args(args):
@@ -253,5 +254,18 @@ def pretty_model_output(text: str):
         else:
             print(f"{i:02d} | {line}")
 
-    print("=" * 80)
+    print("=" * 80 + "\n\n\n")
 
+def print_conversation(messages: list[dict], response: dict):
+    """
+    Print the conversation messages in a readable format.
+    Args:
+        messages (list[renderers.Message]): List of message objects.
+    """
+    input = messages[-1]["content"]
+    output = response["content"]
+
+    print("---------- User Input ----------")
+    print(input)
+    print("--------------------------------\n")
+    pretty_model_output(output)

@@ -8,54 +8,29 @@ import argparse
 import asyncio
 import config
 from tinker_cookbook import renderers
-from utils import build_model, build_prompt, update_config_from_args, pretty_model_output, TinkerSampler
+from utils import build_model, build_prompt, update_config_from_args, pretty_model_output, TinkerSampler, print_conversation
 
 
-# ---------- Single Prompt Inference (Direct Mode) ----------
-async def run_inference_direct(model_type: str):
-    """
-    Run asynchronous inference for a single prompt.
-    Args:
-        model_type (str): Model type, one of ['baseline', 'sft', 'dpo'].
-        prompt_input (str): Optional single prompt string.
-    """
-    system_prompt_info = "with" if config.USE_SYSTEM_PROMPT else "without"
-    print("*****************************************************************")
-    print(f"--- Running {model_type.upper()} model in DIRECT mode {system_prompt_info} system prompt ---")
-    print("*****************************************************************\n")
-    model: TinkerSampler = build_model(model_type)
-    messages: list[renderers.Message] = build_prompt()
-
-    response = await model.generate(messages)
-    pretty_model_output(response["content"])
-
-
-# ---------- Batch Inference (JSON Mode) ----------
-async def run_inference_json(model_type: str):
+async def run_inference(model_type: str):
     """
     Run asynchronous concurrent inference for multiple prompts loaded from a JSON file.
     Args:
         model_type (str): Model type, one of ['baseline', 'sft', 'dpo'].
     """
     system_prompt_info = "with" if config.USE_SYSTEM_PROMPT else "without"
-    print(f"--- Running {model_type.upper()} model in JSON mode (async batch) {system_prompt_info} system prompt ---\n")
+    print("*****************************************************************")
+    print(f"--- Running {model_type.upper()} model in {config.PROMPT_MODE.upper()} mode {system_prompt_info} system prompt ---")
+    print("*****************************************************************\n")
     model: TinkerSampler = build_model(model_type)
     message_groups: list[list[renderers.Message]] = build_prompt()
-    
-    print(f"Loaded {len(message_groups)} samples.\n")
 
-    async def get_output(msgs, idx):
-        response = await model.generate(msgs)
-        return idx, response["content"]
-
-    # Run inference concurrently using asyncio.gather
-    tasks = [get_output(m, i) for i, m in enumerate(message_groups)]
-    results = await asyncio.gather(*tasks)
+    results = await asyncio.gather(*[model.generate(m) for m in message_groups])
 
     # Print results in order
-    for idx, output in sorted(results, key=lambda x: x[0]):
-        print(f"\n[Sample {idx + 1}] -------------------")
-        pretty_model_output(output)
+    print("********************* Inference Results ***********************\n")
+    for idx in range(len(message_groups)):
+        print(f"----------  \n[Sample {idx + 1}]")
+        print_conversation(message_groups[idx], results[idx])
 
 # ---------- Entry Point ----------
 def main():
@@ -74,10 +49,7 @@ def main():
     # Update config based on command-line args
     update_config_from_args(args)
 
-    if args.active_mode == config.JSON:
-        asyncio.run(run_inference_json(args.model_type))
-    else:
-        asyncio.run(run_inference_direct(args.model_type))
+    asyncio.run(run_inference(args.model_type))
 
 if __name__ == "__main__":
     main()
