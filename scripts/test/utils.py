@@ -194,6 +194,12 @@ def update_config_from_args(args):
             args.use_system_prompt = args.use_system_prompt.lower() in ("true", "1", "yes")
         config.USE_SYSTEM_PROMPT = args.use_system_prompt
 
+    # update debug mode
+    if hasattr(args, "debug_mode") and args.debug_mode is not None:
+        if isinstance(args.debug_mode, str):
+            args.debug_mode = args.debug_mode.lower() in ("true", "1", "yes")
+        config.DEBUG_MODE = args.debug_mode
+        
     # Update prompt or system prompt text if provided
     if hasattr(args, "user_prompt") and args.user_prompt:
         config.USER_PROMPT = args.user_prompt
