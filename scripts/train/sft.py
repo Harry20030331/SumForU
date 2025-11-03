@@ -13,7 +13,7 @@ def build_config(
     dataset_path: str = "/home/yumingfeng/repo/SumForU/dataset/v1_synthesized_output.jsonl",
     log_path: str = "/home/yumingfeng/repo/SumForU/results/sft_personalized_model",
     learning_rate: float = 2e-4,
-    num_epochs: int = 10,
+    num_epochs: int = 50,
     eval_every: int = 8,
     wandb_project: str = "SumForU_SFT",
     wandb_name: str = "4b_v1",

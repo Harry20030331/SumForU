@@ -1,0 +1,27 @@
+2025-11-03 13:39:56,810 INFO    MainThread:116737 [wandb_setup.py:_flush():81] Current SDK version is 0.22.2
+2025-11-03 13:39:56,810 INFO    MainThread:116737 [wandb_setup.py:_flush():81] Configure stats pid to 116737
+2025-11-03 13:39:56,810 INFO    MainThread:116737 [wandb_setup.py:_flush():81] Loading settings from /root/.config/wandb/settings
+2025-11-03 13:39:56,810 INFO    MainThread:116737 [wandb_setup.py:_flush():81] Loading settings from /home/yumingfeng/repo/SumForU/wandb/settings
+2025-11-03 13:39:56,811 INFO    MainThread:116737 [wandb_setup.py:_flush():81] Loading settings from environment variables
+2025-11-03 13:39:56,811 INFO    MainThread:116737 [wandb_init.py:setup_run_log_directory():705] Logging user logs to /home/yumingfeng/repo/SumForU/results/sft_personalized_model/wandb/run-20251103_133956-xo0ys70e/logs/debug.log
+2025-11-03 13:39:56,811 INFO    MainThread:116737 [wandb_init.py:setup_run_log_directory():706] Logging internal logs to /home/yumingfeng/repo/SumForU/results/sft_personalized_model/wandb/run-20251103_133956-xo0ys70e/logs/debug-internal.log
+2025-11-03 13:39:56,811 INFO    MainThread:116737 [wandb_init.py:init():832] calling init triggers
+2025-11-03 13:39:56,811 INFO    MainThread:116737 [wandb_init.py:init():837] wandb.init called with sweep_config: {}
+config: {'log_path': '/home/yumingfeng/repo/SumForU/results/sft_personalized_model', 'model_name': 'Qwen/Qwen3-4B-Instruct-2507', 'load_checkpoint_path': None, 'dataset_builder': {'common_config': {'model_name_for_tokenizer': 'Qwen/Qwen3-4B-Instruct-2507', 'renderer_name': 'qwen3_instruct', 'max_length': 32768, 'batch_size': 64, 'train_on_what': <TrainOnWhat.ALL_ASSISTANT_MESSAGES: 'all_assistant_messages'>}, 'file_path': '/home/yumingfeng/repo/SumForU/dataset/v1_synthesized_output.jsonl', 'test_size': 0, 'shuffle_seed': 0}, 'learning_rate': 0.0002, 'lr_schedule': 'linear', 'num_epochs': 50, 'lora_rank': 32, 'base_url': None, 'evaluator_builders': [], 'infrequent_evaluator_builders': [], 'save_every': 20, 'eval_every': 8, 'infrequent_eval_every': 100, 'adam_beta1': 0.9, 'adam_beta2': 0.95, 'adam_eps': 1e-08, 'wandb_project': 'SumForU_SFT', 'wandb_name': '4b_v1', '_wandb': {}}
+2025-11-03 13:39:56,811 INFO    MainThread:116737 [wandb_init.py:init():880] starting backend
+2025-11-03 13:39:57,034 INFO    MainThread:116737 [wandb_init.py:init():883] sending inform_init request
+2025-11-03 13:39:57,041 INFO    MainThread:116737 [wandb_init.py:init():891] backend started and connected
+2025-11-03 13:39:57,044 INFO    MainThread:116737 [wandb_init.py:init():961] updated telemetry
+2025-11-03 13:39:57,052 INFO    MainThread:116737 [wandb_init.py:init():985] communicating run to backend with 90.0 second timeout
+2025-11-03 13:39:58,105 INFO    MainThread:116737 [wandb_init.py:init():1036] starting run threads in backend
+2025-11-03 13:39:58,433 INFO    MainThread:116737 [wandb_run.py:_console_start():2509] atexit reg
+2025-11-03 13:39:58,433 INFO    MainThread:116737 [wandb_run.py:_redirect():2357] redirect: wrap_raw
+2025-11-03 13:39:58,434 INFO    MainThread:116737 [wandb_run.py:_redirect():2426] Wrapping output streams.
+2025-11-03 13:39:58,434 INFO    MainThread:116737 [wandb_run.py:_redirect():2449] Redirects installed.
+2025-11-03 13:39:58,439 INFO    MainThread:116737 [wandb_init.py:init():1076] run started, returning control to user process
+2025-11-03 13:39:58,464 INFO    MainThread:116737 [wandb_run.py:_config_callback():1392] config_cb None None {'log_path': '/home/yumingfeng/repo/SumForU/results/sft_personalized_model', 'model_name': 'Qwen/Qwen3-4B-Instruct-2507', 'load_checkpoint_path': None, 'dataset_builder': {'common_config': {'model_name_for_tokenizer': 'Qwen/Qwen3-4B-Instruct-2507', 'renderer_name': 'qwen3_instruct', 'max_length': 32768, 'batch_size': 64, 'train_on_what': 'ALL_ASSISTANT_MESSAGES'}, 'file_path': '/home/yumingfeng/repo/SumForU/dataset/v1_synthesized_output.jsonl', 'test_size': 0, 'shuffle_seed': 0}, 'learning_rate': 0.0002, 'lr_schedule': 'linear', 'num_epochs': 50, 'lora_rank': 32, 'base_url': None, 'evaluator_builders': [], 'infrequent_evaluator_builders': [], 'save_every': 20, 'eval_every': 8, 'infrequent_eval_every': 100, 'adam_beta1': 0.9, 'adam_beta2': 0.95, 'adam_eps': 1e-08, 'wandb_project': 'SumForU_SFT', 'wandb_name': '4b_v1'}
+2025-11-03 14:07:04,084 INFO    MainThread:116737 [wandb_run.py:_finish():2275] finishing run yumingf-stanford-university/SumForU_SFT/xo0ys70e
+2025-11-03 14:07:04,085 INFO    MainThread:116737 [wandb_run.py:_atexit_cleanup():2474] got exitcode: 0
+2025-11-03 14:07:04,085 INFO    MainThread:116737 [wandb_run.py:_restore():2456] restore
+2025-11-03 14:07:04,085 INFO    MainThread:116737 [wandb_run.py:_restore():2462] restore done
+2025-11-03 14:07:05,224 INFO    MainThread:116737 [wandb_run.py:_footer_sync_info():3872] logging synced files

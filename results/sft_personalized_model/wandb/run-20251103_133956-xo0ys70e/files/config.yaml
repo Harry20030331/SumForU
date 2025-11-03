@@ -2,7 +2,7 @@ _wandb:
     value:
         cli_version: 0.22.2
         e:
-            e4q2nxub1xk4kmtgkzah0n6wi8ihtb0w:
+            jeskb33ni8cxqnabgq0d56fyuo6nuue0:
                 codePath: scripts/train/sft.py
                 codePathLocal: scripts/train/sft.py
                 cpu_count: 12
@@ -11,11 +11,11 @@ _wandb:
                 disk:
                     /:
                         total: "1081101176832"
-                        used: "83259584512"
+                        used: "83262410752"
                 email: yumingf@stanford.edu
                 executable: /root/anaconda3/envs/hw2/bin/python
                 git:
-                    commit: e5faa45c69ec3936b74af2f18c52dc1724c20ade
+                    commit: 4523ce2d6e6ce2d249cbddd9c94e41212c544b12
                     remote: git@github.com:Harry20030331/SumForU.git
                 gpu: NVIDIA GeForce RTX 4060 Laptop GPU
                 gpu_count: 1
@@ -31,8 +31,8 @@ _wandb:
                 program: /home/yumingfeng/repo/SumForU/scripts/train/sft.py
                 python: CPython 3.11.13
                 root: /home/yumingfeng/repo/SumForU/results/sft_personalized_model
-                startedAt: "2025-11-03T20:42:02.815659Z"
-                writerId: e4q2nxub1xk4kmtgkzah0n6wi8ihtb0w
+                startedAt: "2025-11-03T21:39:56.807246Z"
+                writerId: jeskb33ni8cxqnabgq0d56fyuo6nuue0
         m: []
         python_version: 3.11.13
         t:
@@ -94,7 +94,7 @@ lr_schedule:
 model_name:
     value: Qwen/Qwen3-4B-Instruct-2507
 num_epochs:
-    value: 10
+    value: 50
 save_every:
     value: 20
 wandb_name:

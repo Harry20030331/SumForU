@@ -20,7 +20,7 @@ MODEL_NAME = "Qwen/Qwen3-4B-Instruct-2507"
 # MODEL_NAME = "Qwen/Qwen3-30B-A3B-Instruct-2507"
 
 # Tinker model paths
-SFT_MODEL_PATH = "tinker://2e914a38-7976-4964-8b08-555a3b5f351a/sampler_weights/final"
+SFT_MODEL_PATH = "tinker://a162e531-75cd-4d1e-b480-e554614a9677/sampler_weights/final"
 DPO_MODEL_PATH = "tinker://1ac4b6e1-095d-493f-83d5-5ab4067e651f/sampler_weights/final"
 
 # Prompt settings

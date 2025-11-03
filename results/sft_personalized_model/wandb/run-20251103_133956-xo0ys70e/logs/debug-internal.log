@@ -1,0 +1,14 @@
+{"time":"2025-11-03T13:39:57.046843205-08:00","level":"INFO","msg":"stream: starting","core version":"0.22.2"}
+{"time":"2025-11-03T13:39:57.788880885-08:00","level":"INFO","msg":"stream: created new stream","id":"xo0ys70e"}
+{"time":"2025-11-03T13:39:57.78894749-08:00","level":"INFO","msg":"handler: started","stream_id":"xo0ys70e"}
+{"time":"2025-11-03T13:39:57.788992745-08:00","level":"INFO","msg":"stream: started","id":"xo0ys70e"}
+{"time":"2025-11-03T13:39:57.789019374-08:00","level":"INFO","msg":"writer: started","stream_id":"xo0ys70e"}
+{"time":"2025-11-03T13:39:57.789039847-08:00","level":"INFO","msg":"sender: started","stream_id":"xo0ys70e"}
+{"time":"2025-11-03T13:48:13.479182985-08:00","level":"INFO","msg":"api: retrying error","error":"Post \"https://api.wandb.ai/files/yumingf-stanford-university/SumForU_SFT/xo0ys70e/file_stream\": dial tcp 35.186.228.49:443: connect: connection timed out"}
+{"time":"2025-11-03T13:59:00.647708832-08:00","level":"INFO","msg":"api: retrying error","error":"Post \"https://api.wandb.ai/files/yumingf-stanford-university/SumForU_SFT/xo0ys70e/file_stream\": dial tcp 35.186.228.49:443: connect: connection timed out"}
+{"time":"2025-11-03T14:07:04.089084119-08:00","level":"INFO","msg":"handler: operation stats","stats":{"operations":[{"desc":"updating run metadata","runtime_seconds":0.003815133}],"total_operations":1}}
+{"time":"2025-11-03T14:07:05.039289712-08:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2025-11-03T14:07:05.227101765-08:00","level":"INFO","msg":"stream: closing","id":"xo0ys70e"}
+{"time":"2025-11-03T14:07:05.227119956-08:00","level":"INFO","msg":"handler: closed","stream_id":"xo0ys70e"}
+{"time":"2025-11-03T14:07:05.227279911-08:00","level":"INFO","msg":"sender: closed","stream_id":"xo0ys70e"}
+{"time":"2025-11-03T14:07:05.227289713-08:00","level":"INFO","msg":"stream: closed","id":"xo0ys70e"}
