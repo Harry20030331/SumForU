@@ -7,6 +7,7 @@ import config
 import json
 import re
 import os
+import re
 import tinker
 from dotenv import load_dotenv
 from tinker import types
@@ -104,7 +105,7 @@ def build_prompt():
             - If 'json', returns a list of message lists (one per item).
     """
     active_mode = config.PROMPT_MODE
-    prompt_input = config.PROMPT_PATH if active_mode == config.JSON else None
+    prompt_input = config.PROMPT_PATH if active_mode == config.JSON else config.USER_PROMPT
 
     if active_mode == config.JSON:
         # check if file exists
@@ -117,6 +118,7 @@ def build_prompt():
         messages_list = []
         for i, item in enumerate(data):
             input_text = item.get("input", "")
+            # print(f"Loaded prompt {i + 1}: {input_text}")
             if config.USE_SYSTEM_PROMPT:
                 messages = [
                     renderers.Message(role="system", content=config.SYSTEM_PROMPT),
@@ -135,8 +137,15 @@ def build_prompt():
                 renderers.Message(role="system", content=config.SYSTEM_PROMPT),
                 renderers.Message(role="user", content=input_text),
             ]
+            print("----------- Using system prompt -----------")
+            print( config.SYSTEM_PROMPT)
+            print("-------------------------------------------\n")
         else:
             messages = [renderers.Message(role="user", content=input_text)]
+
+        print("----------- Using user prompt -------------")
+        print(input_text)
+        print("-------------------------------------------\n")
 
         return messages
 
@@ -172,7 +181,77 @@ def update_config_from_args(args):
     if hasattr(args, "system_prompt") and args.system_prompt:
         config.SYSTEM_PROMPT = args.system_prompt
 
-    print("✅ Config updated from command-line arguments:")
-    print(f"  TEMPERATURE = {config.TEMPERATURE}")
-    print(f"  MAX_TOKENS = {config.MAX_TOKENS}")
-    print(f"  USE_SYSTEM_PROMPT = {config.USE_SYSTEM_PROMPT}")
+    print("---------------------------------------")
+    print("---         Config Updated!         ---")
+    print("---------------------------------------")
+    print()
+
+def clear_content(s: str) -> str:
+    """
+    Clear unwanted patterns (e.g. <|im_end|>) from the content string.
+    Args:
+        s (str): Input string to be cleaned.]
+    Returns:
+        str: Cleaned string.
+    """
+    # Define unwanted patterns
+    unwanted_patterns = [
+        r"<\|im_end\|>",
+        r"<\|endoftext\|>",
+        r"\s+"
+    ]
+    for pattern in unwanted_patterns:
+        s = re.sub(pattern, " ", s)
+    return s.strip()
+
+def pretty_model_output(text: str):
+    """
+    Auto-format long model outputs into readable multi-line sections, 
+    while keeping Markdown tables intact.
+
+    Improvements:
+    - Detects only standalone '---' as section separators (not table lines)
+    - Keeps Markdown table rows together
+    - Preserves Markdown headers, bullet points, emojis, and short lines
+    """
+
+    # Insert newlines before Markdown headers and bullets, but not inside tables
+    # text = re.sub(r"(?<!\|)(---)(?!\|)", r"\n\1\n", text)   # only standalone ---
+    text = clear_content(text)
+    text = re.sub(r"(### )", r"\n\1", text)
+    text = re.sub(r"(\👉|\- |\* )", r"\n\1", text)
+    text = re.sub(r"(\|.*\|)", r"\n\1", text)  # add breaks before table rows
+    text = re.sub(r"\n{2,}", "\n", text)
+
+    lines = text.strip().split("\n")
+
+    print("=" * 32, " Model Output ", "=" * 32)
+
+    for i, line in enumerate(lines, 1):
+        line = line.strip()
+        if not line:
+            continue
+
+        # Section header
+        if line.startswith("###"):
+            print("\n" + "-" * 80)
+            print(f"{i:02d} | {line}")
+            print("-" * 80)
+
+        # Real horizontal separator (standalone ---)
+        elif re.fullmatch(r"-{3,}", line):
+            print("-" * 80)
+
+        # Markdown table rows
+        elif "|" in line and re.match(r"^\|.*\|$", line):
+            print(f"{i:02d} | {line}")
+
+        # Bullets or subpoints
+        elif re.match(r"^[-•*]\s", line.strip()) or line.strip().startswith("👉"):
+            print(f"{i:02d} |   {line}")
+
+        else:
+            print(f"{i:02d} | {line}")
+
+    print("=" * 80)
+
