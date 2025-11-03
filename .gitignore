@@ -2,3 +2,6 @@ __pycache__/
 .env
 data.json
 results/
+
+# Ignore config.py if it contains sensitive information.
+scripts/test/config.py
