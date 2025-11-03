@@ -20,16 +20,16 @@ MODEL_NAME = "Qwen/Qwen3-4B-Instruct-2507"
 # MODEL_NAME = "Qwen/Qwen3-30B-A3B-Instruct-2507"
 
 # Tinker model paths
-SFT_MODEL_PATH = "tinker://059111f6-6682-45e6-89e6-30f04b35bb20/sampler_weights/final"
+SFT_MODEL_PATH = "tinker://2e914a38-7976-4964-8b08-555a3b5f351a/sampler_weights/final"
 DPO_MODEL_PATH = "tinker://1ac4b6e1-095d-493f-83d5-5ab4067e651f/sampler_weights/final"
 
 # Prompt settings
 PROMPT_MODE = JSON  # Options: 'direct' or 'json'
 USER_PROMPT = """
 Help write a personalized product summary for a customer based on their purchase persona from product reviews set.
-Output a concise summary in 2-3 sentences, without any prefixes and extra explanations.
+Output a CONCISE summary in 2-3 sentences, without any prefixes and extra explanations.
 
-Format:
+Input Format:
 
 persona: <persona>
 
