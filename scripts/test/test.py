@@ -7,6 +7,7 @@ Supports both single prompt (direct) and batch JSON (concurrent) inference.
 import argparse
 import asyncio
 import config
+import json
 from tinker_cookbook import renderers
 from utils import build_model, build_prompt, update_config_from_args, pretty_model_output, TinkerSampler, print_conversation
 
@@ -25,12 +26,18 @@ async def run_inference(model_type: str):
     message_groups: list[list[renderers.Message]] = build_prompt()
 
     results = await asyncio.gather(*[model.generate(m) for m in message_groups])
+    
+    # load reference ouputs if in JSON mode
+    if config.PROMPT_MODE == config.JSON:
+        with open(config.PROMPT_PATH, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        references = [item.get("reference_output", []) for item in data]
 
     # Print results in order
     print("********************* Inference Results ***********************\n")
     for idx in range(len(message_groups)):
         print(f"----------  \n[Sample {idx + 1}]")
-        print_conversation(message_groups[idx], results[idx])
+        print_conversation(message_groups[idx], results[idx], references[idx])
 
 # ---------- Entry Point ----------
 def main():

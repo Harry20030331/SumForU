@@ -21,10 +21,19 @@ DPO_MODEL_PATH = "tinker://1ac4b6e1-095d-493f-83d5-5ab4067e651f/sampler_weights/
 
 # Prompt settings
 PROMPT_MODE = JSON  # Options: 'direct' or 'json'
-USER_PROMPT = "Explain the difference between supervised fine-tuning and DPO in simple terms."
-PROMPT_PATH = "data.json"  # Used if PROMPT_MODE is 'json'
+USER_PROMPT = """
+Help write a personalized product summary for a customer based on their purchase persona from product reviews set.
+Output a concise summary in 2-3 sentences, without any prefixes and extra explanations.
+
+Format:
+
+persona: <persona>
+
+product reviews: <reviews>
+"""
+PROMPT_PATH = "dataset/v1_preprocessed_test.json"  # Used if PROMPT_MODE is 'json'
 
 # System prompt settings
-USE_SYSTEM_PROMPT = True
+USE_SYSTEM_PROMPT = False
 SYSTEM_PROMPT = "Print Thank you before you explain the difference."
 

@@ -2,11 +2,14 @@
 """
 Initialize model samplers and handle prompt construction logic.
 """
-import config
+import os
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
+from scripts.test import config
 
 import json
 import re
-import os
+
 import re
 import tinker
 from dotenv import load_dotenv
@@ -89,6 +92,21 @@ def build_model(model_type: str) -> TinkerSampler:
     )
 
 
+def build_user_prompt(persona: str, reviews: str) -> str:
+    """
+    Build a personalized user prompt by filling in the persona and reviews.
+
+    Args:
+        persona (str): The customer's purchase persona.
+        reviews (str): The product reviews.
+
+    Returns:
+        str: The formatted user prompt.
+    """
+    prompt_template = config.USER_PROMPT
+    prompt = prompt_template.replace("<persona>", persona).replace("<reviews>", reviews)
+    return prompt
+
 def build_prompt():
     """
     Build message(s) for model input depending on the active mode.
@@ -126,7 +144,7 @@ def build_prompt():
         print(f"---------------------------------------\n")
         
         for i, item in enumerate(data):
-            input_text = item.get("input", "")
+            input_text = build_user_prompt(item["persona"], item["reviews"])
             # print(f"Loaded prompt {i + 1}: {input_text}")
             if config.USE_SYSTEM_PROMPT:
                 messages = [
@@ -254,9 +272,9 @@ def pretty_model_output(text: str):
         else:
             print(f"{i:02d} | {line}")
 
-    print("=" * 80 + "\n\n\n")
+    print("=" * 80 + "\n")
 
-def print_conversation(messages: list[dict], response: dict):
+def print_conversation(messages: list[dict], response: dict, reference: list[str] | None = None):
     """
     Print the conversation messages in a readable format.
     Args:
@@ -266,6 +284,11 @@ def print_conversation(messages: list[dict], response: dict):
     output = response["content"]
 
     print("---------- User Input ----------")
-    print(input)
+    print(input[:1000], "..." if len(input) > 1000 else "")
     print("--------------------------------\n")
     pretty_model_output(output)
+    if reference:
+        print("=" * 30, " Reference Outputs ", "=" * 30)
+        print(reference[0])
+        print("=" * 80 + "\n\n\n")
+        
