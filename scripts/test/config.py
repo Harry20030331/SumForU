@@ -27,7 +27,7 @@ DPO_MODEL_PATH = "tinker://1ac4b6e1-095d-493f-83d5-5ab4067e651f/sampler_weights/
 PROMPT_MODE = JSON  # Options: 'direct' or 'json'
 USER_PROMPT = """
 Help write a personalized product summary for a customer based on their purchase persona from product reviews set.
-Output a CONCISE summary in 2-3 sentences, without any prefixes and extra explanations.
+Output a CONCISE summary in 2-3 sentences(Summary: ) and 1-10 suitability rating(e.g. Suitability: 8/10), without any prefixes and extra explanations.
 
 Input Format:
 
@@ -35,10 +35,11 @@ persona: <persona>
 
 product reviews: <reviews>
 """
-PROMPT_PATH = "dataset/v1_preprocessed.json"  # Used if PROMPT_MODE is 'json'
+
+PROMPT_PATH = "dataset/v1_test_preprocessed.json"  # Used if PROMPT_MODE is 'json'
 
 # System prompt settings
-USE_SYSTEM_PROMPT = True
+USE_SYSTEM_PROMPT = False
 SYSTEM_PROMPT = """
 You are an intelligent review summarization assistant.  
 Your task is to read a set of user reviews and generate a concise, decision-oriented summary that reflects what the target persona values most, while identifying consistently mentioned weaknesses that could affect satisfaction.
@@ -51,10 +52,12 @@ Instructions:
    - Neutral but empathetic (objective and informative, not promotional).
    - Avoid repetitive listing; merge overlapping opinions naturally.
 
-3. Persona usage:
-   - Treat persona as describing what the user cares about most. Focus the summary on these aspects.
-   - If the reviews repeatedly mention a negative trait (appears multiple times), include it in the summary succinctly.
-   - Ignore isolated or contradictory negatives that appear only once.
+3. Reasoning Process
+   Follow this structured reasoning before producing the final output:
+      Step 1. **Interpret Persona:** Identify the persona’s core priorities and evaluation criteria (e.g., durability, price, comfort). Determine what the persona values most and what factors matter for their satisfaction.
+      Step 2. **Analyze Reviews:** Detect recurring patterns across rating levels while filtering out noise and isolated opinions. Focus on themes, strengths, and weaknesses mentioned multiple times, and ignore isolated or contradictory negatives that appear only once.
+      Step 3. **Integrate Evidence:** Synthesize representative insights that reflect both positive and negative aspects relevant to the persona. Ensure that these insights align with the persona’s values and are grounded in multiple review observations.
+      Step 4. **Write Summary:** Compose a 2–3 sentence personalized summary that integrates persona priorities with aggregated user perspectives. Include a **1–10 suitability rating** with a concise justification referencing consistent evidence from the reviews.
 
 4. Content requirements:
    - Be concise. Do not invent information outside the reviews.

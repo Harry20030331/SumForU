@@ -118,6 +118,6 @@ async def preprocess_reviews(input_path, output_path):
 
 
 if __name__ == "__main__":
-    input_path = "dataset/v1_input_stringified.json"
-    output_path = "dataset/v1_preprocessed.json"
+    input_path = "dataset/v1_test_stringified.json"
+    output_path = "dataset/v1_test_preprocessed.json"
     asyncio.run(preprocess_reviews(input_path, output_path))

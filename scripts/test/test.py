@@ -65,6 +65,9 @@ def main():
 
     args = parser.parse_args()
 
+    if args.target_file is None and config.PROMPT_MODE == config.JSON:
+        raise ValueError("Target file must be specified in JSON mode to save results.")
+    
     # Update config based on command-line args
     update_config_from_args(args)
 
