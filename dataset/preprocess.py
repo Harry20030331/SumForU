@@ -1,12 +1,17 @@
+import argparse
+import asyncio
 import json
 import os
 import sys
-import asyncio
-from tqdm.asyncio import tqdm_asyncio 
+from typing import Sequence
+
+from tqdm.asyncio import tqdm_asyncio
+
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from tinker_cookbook import renderers
+from dataset import INTERIM_DIR
 from scripts.test.utils import TinkerSampler, clear_content
+from tinker_cookbook import renderers
 
 
 async def create_persona(current_reviews, other_reviews):
@@ -117,7 +122,23 @@ async def preprocess_reviews(input_path, output_path):
     print("================================================")
 
 
+def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Preprocess persona review dataset")
+    parser.add_argument(
+        "--input",
+        type=str,
+        default=str((INTERIM_DIR / "v1_test_stringified.json").resolve()),
+        help="Path to the stringified review JSON file",
+    )
+    parser.add_argument(
+        "--output",
+        type=str,
+        default=str((INTERIM_DIR / "v1_test_preprocessed.json").resolve()),
+        help="Destination path for the preprocessed persona JSON",
+    )
+    return parser.parse_args(argv)
+
+
 if __name__ == "__main__":
-    input_path = "dataset/v1_test_stringified.json"
-    output_path = "dataset/v1_test_preprocessed.json"
-    asyncio.run(preprocess_reviews(input_path, output_path))
+    args = parse_args()
+    asyncio.run(preprocess_reviews(args.input, args.output))

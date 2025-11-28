@@ -16,7 +16,7 @@ async def run_inference(model_type: str, target_file: str = None):
     """
     Run asynchronous concurrent inference for multiple prompts loaded from a JSON file.
     Args:
-        model_type (str): Model type, one of ['baseline', 'sft', 'dpo'].
+        model_type (str): Model type, one of ['baseline', 'sft', 'rl'].
     """
     system_prompt_info = "with" if config.USE_SYSTEM_PROMPT else "without"
     print("*****************************************************************")
@@ -52,7 +52,7 @@ async def run_inference(model_type: str, target_file: str = None):
 # ---------- Entry Point ----------
 def main():
     parser = argparse.ArgumentParser(description="Run async model test under Tinker framework.")
-    parser.add_argument("--model_type", type=str, default=config.BASELINE, choices=[config.BASELINE, config.SFT, config.DPO])
+    parser.add_argument("--model_type", type=str, default=config.BASELINE, choices=[config.BASELINE, config.SFT, config.RL])
     parser.add_argument("--target_file", type=str, default=None, help="Path to the target JSON file for saving results.")
     parser.add_argument("--active_mode", type=str, choices=[config.JSON, config.DIRECT])
     parser.add_argument("--user_input", help="Path to JSON file or single prompt text.")

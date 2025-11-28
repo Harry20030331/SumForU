@@ -70,7 +70,7 @@ def build_model(model_type: str) -> TinkerSampler:
     """
     Build and return a model sampler based on the selected model type.
     Args:
-        model_type (str): One of ['baseline', 'sft', 'dpo'].
+        model_type (str): One of ['baseline', 'sft', 'rl'].
     Returns:
         TinkerSampler: Initialized sampler for the selected model.
     """
@@ -79,10 +79,10 @@ def build_model(model_type: str) -> TinkerSampler:
         model_path = None
     elif model_type == config.SFT:
         model_path = config.SFT_MODEL_PATH
-    elif model_type == config.DPO:
+    elif model_type == config.RL:
         model_path = config.DPO_MODEL_PATH
     else:
-        raise ValueError("Invalid model_type. Choose from ['baseline', 'sft', 'dpo'].")
+        raise ValueError("Invalid model_type. Choose from ['baseline', 'sft', 'rl'].")
 
     return TinkerSampler(
         model_name=model_name,

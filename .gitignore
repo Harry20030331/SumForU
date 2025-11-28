@@ -1,6 +1,7 @@
 __pycache__/
 .env
 data.json
+.vscode/
 
 # Ignore config.py if it contains sensitive information.
 scripts/test/config.py

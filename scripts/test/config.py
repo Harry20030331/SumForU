@@ -6,7 +6,7 @@ DIRECT = "direct"
 JSON = "json"
 BASELINE = "baseline"
 SFT = "sft"
-DPO = "dpo"
+RL = "rl"
 
 # debug mode
 DEBUG_MODE = False

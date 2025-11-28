@@ -1,6 +1,8 @@
 import chz
 import wandb
 from dotenv import load_dotenv
+
+from dataset import SFT_DIR
 from tinker_cookbook import cli_utils, model_info
 from tinker_cookbook.renderers import TrainOnWhat
 from tinker_cookbook.supervised import train
@@ -10,7 +12,7 @@ from tinker_cookbook.supervised.types import ChatDatasetBuilderCommonConfig
 
 def build_config(
     model_name: str = "Qwen/Qwen3-4B-Instruct-2507",
-    dataset_path: str = "/home/yumingfeng/repo/SumForU/dataset/v1_synthesized_output.jsonl",
+    dataset_path: str = str((SFT_DIR / "v1_synthesized_output.jsonl").resolve()),
     log_path: str = "/home/yumingfeng/repo/SumForU/results/sft_personalized_model",
     learning_rate: float = 2e-4,
     num_epochs: int = 50,
