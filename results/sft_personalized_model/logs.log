@@ -9504,3 +9504,496 @@ tinker_cookbook.utils.ml_log:195 [INFO]
 └────────────────────────────────┴──────────┘
 tinker_cookbook.utils.ml_log:236 [INFO] Logging to: https://wandb.ai/230project/SumForU/runs/riapt5db
 tinker_cookbook.utils.misc_utils:20 [INFO] Starting get_batch
+tinker_cookbook.utils.misc_utils:23 [INFO] get_batch took 0.46 seconds
+tinker_cookbook.supervised.train:253 [INFO] [33m<|im_start|>user
+[0m[33mYou are an intelligent review summarization assistant.  
+[0m[33mYour task is to read a set of user reviews and generate a concise, decision-oriented summary that reflects what the target persona values most, while identifying consistently mentioned weaknesses that could affect satisfaction.
+[0m[33m
+[0m[33mInstructions:
+[0m[33m1. Goal:
+[0m[33m   Generate a 2–3 sentence summary that helps the persona quickly decide whether the product fits their needs.
+[0m[33m
+[0m[33m2. Tone:
+[0m[33m   - Neutral but empathetic (objective and informative, not promotional).
+[0m[33m   - Avoid repetitive listing; merge overlapping opinions naturally.
+[0m[33m
+[0m[33m3. Reasoning Process
+[0m[33m   Follow this structured reasoning before producing the final output:
+[0m[33m      Step 1. **Interpret Persona:** Identify the persona’s core priorities and evaluation criteria (e.g., durability, price, comfort). Determine what the persona values most and what factors matter for their satisfaction.
+[0m[33m      Step 2. **Analyze Reviews:** Detect recurring patterns across rating levels while filtering out noise and isolated opinions. Focus on themes, strengths, and weaknesses mentioned multiple times, and ignore isolated or contradictory negatives that appear only once.
+[0m[33m      Step 3. **Integrate Evidence:** Synthesize representative insights that reflect both positive and negative aspects relevant to the persona. Ensure that these insights align with the persona’s values and are grounded in multiple review observations.
+[0m[33m      Step 4. **Write Summary:** Compose a 2–3 sentence personalized summary that integrates persona priorities with aggregated user perspectives. Include a **1–10 suitability rating** with a concise justification referencing consistent evidence from the reviews.
+[0m[33m
+[0m[33m4. Content requirements:
+[0m[33m   - Be concise. Do not invent information outside the reviews.
+[0m[33m   - Suitability rating reflects the overall match between the persona’s expectations and review sentiment (1–10).
+[0m[33m
+[0m[33mFew-shot Examples:
+[0m[33m
+[0m[33mCase 1 — Not Recommended
+[0m[33m<Input>
+[0m[33mpersona: A practical user who values product durability and quality over price.
+[0m[33mreviews:
+[0m[33m1. The bottle leaked after a week, not worth it. 
+[0m[33m2. Works okay at first, but broke down quickly. 
+[0m[33m3. Packaging feels cheap and the lotion smells odd.
+[0m[33m<Output>
+[0m[33mSummary: The product shows inconsistent quality and poor durability, making it unreliable for long-term use.
+[0m[33mSuitability: 3/10 — Not recommended for users prioritizing lasting quality.
+[0m[33m
+[0m[33mCase 2 — Acceptable
+[0m[33m<Input>
+[0m[33mpersona: A casual buyer who values decent performance at a fair price.
+[0m[33mreviews:
+[0m[33m1. Does what it says, though not perfect.  
+[0m[33m2. Feels okay on skin, but a bit greasy.  
+[0m[33m3. Good for the price, but could absorb faster.
+[0m[33m<Output>
+[0m[33mSummary: This product offers reasonable value and moderate performance, suitable for those with basic expectations.
+[0m[33mSuitability: 6/10 — Acceptable choice for budget-conscious users.
+[0m[33m
+[0m[33mCase 3 — Highly Recommended
+[0m[33m<Input>
+[0m[33mpersona: A skincare enthusiast seeking visible anti-aging results.
+[0m[33mreviews:
+[0m[33m1. My skin feels smoother and looks brighter.  
+[0m[33m2. Great texture and easy to apply.  
+[0m[33m3. I’ve received compliments after just two weeks!
+[0m[33m<Output>
+[0m[33mSummary: The product delivers visible rejuvenation and enhances skin texture, showing clear anti-aging benefits.
+[0m[33mSuitability: 9/10 — Highly recommended for users seeking effective skincare results.
+[0m[33m
+[0m[33mImportant:
+[0m[33m- You MUST produce both "Summary:" and "Suitability:" exactly as shown.
+[0m[33m- Start your output with "Summary:" and nothing else.
+[0m[33m- Do NOT include any introduction or extra text.
+[0m[33m- Example of the correct output format:
+[0m[33mSummary: <concise description of the product’s strengths, performance, and consistent issues if repeatedly mentioned>
+[0m[33mSuitability: <1–10 rating> — <short justification in one phrase>
+[0m[33m
+[0m[33mHelp write a personalized product summary for a customer based on their purchase persona from product reviews set.
+[0m[33mOutput a CONCISE summary in 2-3 sentences(Summary: ) and 1-10 suitability rating(e.g. Suitability: 8/10), without any prefixes and extra explanations.
+[0m[33m
+[0m[33mInput Format:
+[0m[33m
+[0m[33mpersona: This customer prioritizes gentle, skin-friendly products and values texture and usability, especially in wet conditions, and is unlikely to repurchase items that feel overly abrasive or fail to meet expectations for comfort and performance.
+[0m[33m
+[0m[33mproduct reviews: Review 1: rating 1.0. Unusable. In tatters after 3 showers. After 2nd use the loofa part had a huge gash in it. By 3rd shower it was in tatters and unusable. Basically not much better than a paper towel in terms of lifespan. On the previous one I used, the hand strap broke off after a couple of showers.Have ordered these a bunch in the past and have liked them, but last couple of orders had pads that fell apart incredibly fast.
+[0m[33m
+[0m[33mReview 2: rating 3.0. and loofah surface tears easily after little use Pad is too thin, and loofah surface tears easily after little use. It is also softer than other loofahs we have purchased, so it does provide a very effective scrub.
+[0m[33m
+[0m[33mReview 3: rating 3.0. Had to throw it out! I purchased this when there was a deal on Amazon because I've been looking for a more exfoliating loofah. I used it with soap and water. I didn't see much of a difference in any of my spots with dry skin. While I did rinse it thoroughly when I was done, after just 4 or 5 uses and staying in my shower, it started to smell and I had to throw it out.
+[0m[33m
+[0m[33mReview 4: rating 5.0. Loofah Pad. These work great. Rough enough to get a deep clean, But soft enough not to scratch. The handy strap to fit your hand Makes itvery easy to use. Without it falling out of your hand. Plus a Little loop sewn on to hang it with.
+[0m[33m
+[0m[33mReview 5: rating 1.0. Do not waste your money Do not waste your money! I used this for the first time this morning in the shower and the useless thing ripped wide open in less then 5 minutes of gentle scrubbing. The thing is not worth 10 cents let alone what they're asking for it. Don't waste your money.
+[0m[33m
+[0m[33mReview 6: rating 3.0. Beautiful bag but very small Beautiful bag but very small. It wouldn’t hold my stuff and the opening was so narrow, I could barely reach my hand inside.
+[0m[33m
+[0m[33mReview 7: rating 5.0. Worth it Love this! Works well if you get ingrown hairs and leave skin feeling soft after using. I can't believe I didn't have one sooner. The elastic hand strap makes it easier to use when it's all soapy
+[0m[33m
+[0m[33mReview 8: rating 5.0. Five Stars Good, cheap, dependable loofah. Helps smooth out my reptilian skin. Would buy again.
+[0m[33m
+[0m[33mReview 9: rating 4.0. Four Stars A little small but functions well.
+[0m[33m
+[0m[33mReview 10: rating 2.0. really thin and low quality really thin and low quality. not good for anything other than cleaning the bathroom tiles honestly
+[0m[33m
+[0m[33mReview 11: rating 5.0. Great price. Great quality loofahs Great price. Great quality loofahs. They're stiff but not too stiff. Soak them in water for a minute first. In a year or two, or whenever these wear out, I'll probably order them again.
+[0m[33m
+[0m[33mReview 12: rating 1.0. Dont buy! Too rough and scratchy! Used 3 times then threw it in the trash.
+[0m[33m
+[0m[33mReview 13: rating 1.0. Nope Awful, moldy after one week. Even after  washing then they still were moldy.
+[0m[33m
+[0m[33mReview 14: rating 1.0. no foam forms easy. Way to hard on your skin, no foam forms easy.
+[0m[33m
+[0m[33mReview 15: rating 4.0. A Must Have For Spray Tanning!! These are great for scrubbing off a spray tan or exfoliating your skin. I’ve ordered these several times! I’ve used to dry exfoliate and in the shower, works great!I would not keep any longer than a month if you are using them with water. They build up mold inside, even if you don’t see it.Tip: if your skin is very dry, but the two-pack, use one to dry exfoliate first and then wet the other to exfoliate with coconut oil. Works wonders. Your tan (both natural and fake) always lasts longer with moisturized skin!
+[0m[33m
+[0m[33mReview 16: rating 2.0. Keep looking.... I didn't care for these. They were hard to hang onto when using,  didn't fit my hand very well, and were awkward overall.
+[0m[33m
+[0m[33mReview 17: rating 2.0. not for scrubbing only got one out of the 2 pack. Pretty sure my washcloths are more abrasive.
+[0m[33m
+[0m[33mReview 18: rating 1.0. Low quality produt does not live up to expectations Too thin. Do not lay flat after using the first time. They are curled and awkward feeling on your hand using the 2nd time. Not at all what I pictured. Very disappointing.
+[0m[33m
+[0m[33mReview 19: rating 5.0. Five Stars If you like it rough that is the stuff you need.
+[0m[33m
+[0m[33mReview 20: rating 2.0. Keep looking if you want something to exfoliate and bathe with. Unfortunately, this product was not what I thought it would be.  Not sure if they are supposed to be hard and non absorbent, but it is very hard to use in the shower, and I let them soak before I used them and they never did soften up.  Maybe they would be good to do some type of faux finish on a wall or canvas?? Don't use to bath.[[ASIN:B01F99RQQW Exfoliating Loofah Pad - 2pack 100% Natural Loofah Sponge Scrubber Brush Close Skin for Men and Women - GAINWELL]]
+[0m[33m
+[0m[33mReview 21: rating 3.0. Three Stars Not very good for lathering up soap to wash with but goof for scrubbing purposes.
+[0m[33m
+[0m[33mReview 22: rating 1.0. Meh Honestly thought these would be great but they were not. Not abrasive at all to scrub off dead skin. Idk. Not happy.
+[0m[33m
+[0m[33mReview 23: rating 5.0. She loved this! Bought these as a gift and she loved it! Good quality item.
+[0m[33m
+[0m[33mReview 24: rating 3.0. Great shower pads A little harder than I expected, even when wet, but work great in the shower.  I like to use all over about once a week.  Especially great for shaved legs when hairs start emerging or to reduce irritations on arms, neck, etc.
+[0m[33m
+[0m[33mReview 25: rating 2.0. Too rough for human skin SO. ROUGH. I felt like I was ripping my skin off when using this! I ordered a pack of two and ended up throwing both away. Sad to have wasted the money.
+[0m[33m
+[0m[33mReview 26: rating 5.0. Immediate soft skin! I saw reviews stating that this was very rough on the skin, so I figured it would be great for my feet, elbows & knees. But when I tried it out it actually felt like I was rubbing a regular towel on my skin. I was worried that this was going to work for me. But after scrubbing, my skin felt smooth after the first use. Looking forward to ordering again!
+[0m[33m
+[0m[33mReview 27: rating 4.0. More gentle than I expected I bought these for the shower, instead of using the poufs which tend to unravel after just a few uses.  I have allodynia--which is a condition related to Fibromyalgia, which makes the skin extremely sensitive to touch.  I was pleasantly surprised to find these very gentle to the skin and not as abrasive as I thought they would be!  Will be ordering more.  I just wished there was a gentle part and a hard part on the back for my feet, which always need a pumice or something like that.  Ah, the curse of bare feet!...
+[0m[33m
+[0m[33mReview 28: rating 5.0. Great product Exactly what a loofah is in a very convenient use package.
+[0m[33m
+[0m[33mReview 29: rating 2.0. Ok These pads are ok; I was trying to find a more environmentally responsible way of using body wash.
+[0m[33m
+[0m[33mReview 30: rating 2.0. Not recommended Smaller than I realized (and smaller than I want -- but that's on me -- I didn't do my research on these thoroughly enough). Having many years' experience loving loofah as a staple in my self-care, I find the loofah itself in this item has been bleached too much so that it's overly soft and hasn't retained enough &#34;scratching&#34;/exfoliating power (for me). One of the two pads (I haven't used the other) came with an @ 3/4&#34; hole in the loofah which revealed itself when wet, and which, with only a couple times used, quickly turned into a very large hole and rendered the pad pretty much on its way out.  But I see that this company has a wonderful attitude in their high-quality stated intentions for doing business, so I'll be returning these with confidence.  Attitude goes a long way, doesn't it?  Thanks.
+[0m[33m
+[0m[33mReview 31: rating 5.0. Off to a bad start- but got better The first one I used, the strap broke when putting over my hand. I could not get the soap to lather up well at all.It is not very rough( good thing), but does clean the skin well. The size is good.I'll update in 2 weeks when I switch to the second one of the 2-pack and see if any better.( updated) from 2 to 5 starThat first bad one was a one time thing. So far the following 3 I have used, I have had no issues with. I will continue to buy on the monthy subscribe and safe. They do hold up for about 30-45 days on daily useThe photo is the one I'm about to replace after a month and a half of use
+[0m[33m
+[0m[33mReview 32: rating 1.0. Worthless Does not puff up, very flat.  Not exfoliating at all
+[0m[33m
+[0m[33mReview 33: rating 4.0. Overall good! Overall the quality of the product is great, but the elastic band behind the scrub loses elasticity quickly. Other than that it’s good
+[0m[33m
+[0m[33mReview 34: rating 1.0. don't too rough. felt like it was scraping my skin off.
+[0m[33m
+[0m[33mReview 35: rating 1.0. Softer skin contact area Don't buy. Extremely hard on skin.  You might as well use an oddly-shaped rock from your backyard.  Exfoliate is not intended to draw blood.
+[0m[33m
+[0m[33mReview 36: rating 4.0. A little rough. These are a fair price and are what they say they are, but they are not very comfortable to use in my opinion. Although they can be good for rougher parts, like feet etc, not so much the body.
+[0m[33m
+[0m[33mReview 37: rating 1.0. Remain flat These do not actually exfoliate. They curve rather than puff up with water. Unable to return and wish I’d never bought them.
+[0m[33m
+[0m[33mReview 38: rating 5.0. Doesn't look like much when you receive it but when it comes ... Doesn't look like much when you receive it but when it comes into contact with water it expands and is a pretty effective exfoliator, which is what I was looking for.
+[0m[33m
+[0m[33mReview 39: rating 5.0. Nicely made--great exfoliator They're exactly what I wanted: a cross between a natural loofah and body scrubber. Be forewarned these are VERY exfoliating--not soft at all on the business side, but comfortable on your hand. Very well constructed--still using the first one months later. They aren't the best (in my experience) for lathering a rich foam out of your body wash, but they're great for what they are.
+[0m[33m
+[0m[33mReview 40: rating 1.0. These are tiny. Not the standard size and mine ... These are tiny. Not the standard size and mine already wore a hole in it. The last one I bought I had over a year, never tore.
+[0m[33m
+[0m[33mReview 41: rating 5.0. Great Face Loofah This is exactly what I was looking for in my daily skin cleansing regimen – gentle but effective. Highly recommended – will definitely buy more...
+[0m[33m
+[0m[33mReview 42: rating 2.0. Not for sensitive skin It’s too harsh on my skin
+[0m[33m
+[0m[33mReview 43: rating 1.0. Mold after one week of using One of my worst purchases ever...the loofah grew black mold after only a week of using it....threw it away ...money just thrown away
+[0m[33m
+[0m[33mReview 44: rating 5.0. size easy to handle and slip on hand to have good grip
+[0m[33m
+[0m[33mReview 45: rating 2.0. Does not lather My soap usually lathers easily on my other loofahs but I can't get a lather or even a good scrub from this brush. Disappointed.
+[0m[33m
+[0m[33mReview 46: rating 3.0. I have to use much more liquid body wash soap ... I have to use much more liquid body wash soap than I thought I would have to with this.  It is a natural based product and as a result has subtle defects in regards to the way it feels when holding it, but it can be expected because it is a plant.I will probabally keep ordering them.
+[0m[33m
+[0m[33mReview 47: rating 1.0. One Star Said it was soft and comfy, very hard and stale
+[0m[33m
+[0m[33mReview 48: rating 1.0. Bad pads in my opinion Too rough, threw them in the trash, looking for softer pads
+[0m[33m
+[0m[33mReview 49: rating 2.0. Do not buy!! Does not produce as much lather as your regular lufa. Ended up using more soap
+[0m[33m
+[0m[33mReview 50: rating 5.0. Love these! I have been using this type of exfoliating sponge for several years now, but normally I get it from a convience store or something. This brand is really soft compared to what I normally get, but still rough enough to serve its purpose. Love these!
+[0m[33m
+[0m[33mI also provide the real review written by the customer who shares this persona and purchased the product. Use it strictly as additional context to understand the persona's priorities; do not copy or mirror the review.
+[0m[33mrating 1.0. Not for me! Well... the first thing I noticed is that there was only one in my package. The next thing is that I thought that it would be less stiff once it got wet, it wasn’t. It feels like a very difficult to handle piece of sandpaper and it that’s what you a searching for, by all means purchase this. I was looking for something a little less harsh on my skin. This wasn’t the product for me on any level.<|im_end|>
+[0m[33m<|im_start|>assistant
+[0m[32mSummary: While some users find these loofahs effective for exfoliation and appreciate their durability and ease of use, a significant number report issues with excessive roughness, poor durability, and mold development, making them unsuitable for sensitive or skin-friendly use. The product frequently fails to meet expectations for comfort, especially when wet, and many describe it as harsh, abrasive, or[0m
+tinker_cookbook.utils.misc_utils:20 [INFO] Starting save_checkpoint
+tinker_cookbook.checkpoint_utils:81 [INFO] Saved checkpoints: {'state_path': 'tinker://9eb58ca2-5db4-534a-bdf3-a30f70901c42:train:0/weights/000060', 'sampler_path': 'tinker://9eb58ca2-5db4-534a-bdf3-a30f70901c42:train:0/sampler_weights/000060'}
+tinker_cookbook.utils.misc_utils:23 [INFO] save_checkpoint took 6.99 seconds
+tinker_cookbook.utils.misc_utils:20 [INFO] Starting step
+tinker_cookbook.utils.misc_utils:23 [INFO] step took 0.00 seconds
+tinker_cookbook.utils.ml_log:143 [INFO] Wrote metrics to /home/yumingfeng/repo/SumForU/results/sft_personalized_model/metrics.jsonl
+tinker_cookbook.utils.ml_log:195 [INFO] 
+[3m                   Step 60                   [0m
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━┓
+┃[1;35m [0m[1;35mMetric                        [0m[1;35m [0m┃[1;35m [0m[1;35mValue   [0m[1;35m [0m┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━┩
+│[36m [0m[36mepoch                         [0m[36m [0m│[32m [0m[32m3       [0m[32m [0m│
+│[36m [0m[36mlearning_rate                 [0m[36m [0m│[32m [0m[32m0.000133[0m[32m [0m│
+│[36m [0m[36mnum_loss_tokens               [0m[36m [0m│[32m [0m[32m938     [0m[32m [0m│
+│[36m [0m[36mnum_sequences                 [0m[36m [0m│[32m [0m[32m16      [0m[32m [0m│
+│[36m [0m[36mnum_tokens                    [0m[36m [0m│[32m [0m[32m58343   [0m[32m [0m│
+│[36m [0m[36mprogress                      [0m[36m [0m│[32m [0m[32m0.338889[0m[32m [0m│
+│[36m [0m[36mtime/get_batch                [0m[36m [0m│[32m [0m[32m0.228841[0m[32m [0m│
+│[36m [0m[36mtime/save_checkpoint          [0m[36m [0m│[32m [0m[32m6.989729[0m[32m [0m│
+│[36m [0m[36mtime/step                     [0m[36m [0m│[32m [0m[32m0.000967[0m[32m [0m│
+│[36m [0m[36mtime/total                    [0m[36m [0m│[32m [0m[32m9.065315[0m[32m [0m│
+│[36m [0m[36mtrain_mean_nll                [0m[36m [0m│[32m [0m[32m0.520851[0m[32m [0m│
+└────────────────────────────────┴──────────┘
+tinker_cookbook.utils.ml_log:236 [INFO] Logging to: https://wandb.ai/230project/SumForU/runs/riapt5db
+tinker_cookbook.utils.misc_utils:20 [INFO] Starting get_batch
+tinker_cookbook.utils.misc_utils:23 [INFO] get_batch took 0.19 seconds
+tinker_cookbook.supervised.train:253 [INFO] [33m<|im_start|>user
+[0m[33mYou are an intelligent review summarization assistant.  
+[0m[33mYour task is to read a set of user reviews and generate a concise, decision-oriented summary that reflects what the target persona values most, while identifying consistently mentioned weaknesses that could affect satisfaction.
+[0m[33m
+[0m[33mInstructions:
+[0m[33m1. Goal:
+[0m[33m   Generate a 2–3 sentence summary that helps the persona quickly decide whether the product fits their needs.
+[0m[33m
+[0m[33m2. Tone:
+[0m[33m   - Neutral but empathetic (objective and informative, not promotional).
+[0m[33m   - Avoid repetitive listing; merge overlapping opinions naturally.
+[0m[33m
+[0m[33m3. Reasoning Process
+[0m[33m   Follow this structured reasoning before producing the final output:
+[0m[33m      Step 1. **Interpret Persona:** Identify the persona’s core priorities and evaluation criteria (e.g., durability, price, comfort). Determine what the persona values most and what factors matter for their satisfaction.
+[0m[33m      Step 2. **Analyze Reviews:** Detect recurring patterns across rating levels while filtering out noise and isolated opinions. Focus on themes, strengths, and weaknesses mentioned multiple times, and ignore isolated or contradictory negatives that appear only once.
+[0m[33m      Step 3. **Integrate Evidence:** Synthesize representative insights that reflect both positive and negative aspects relevant to the persona. Ensure that these insights align with the persona’s values and are grounded in multiple review observations.
+[0m[33m      Step 4. **Write Summary:** Compose a 2–3 sentence personalized summary that integrates persona priorities with aggregated user perspectives. Include a **1–10 suitability rating** with a concise justification referencing consistent evidence from the reviews.
+[0m[33m
+[0m[33m4. Content requirements:
+[0m[33m   - Be concise. Do not invent information outside the reviews.
+[0m[33m   - Suitability rating reflects the overall match between the persona’s expectations and review sentiment (1–10).
+[0m[33m
+[0m[33mFew-shot Examples:
+[0m[33m
+[0m[33mCase 1 — Not Recommended
+[0m[33m<Input>
+[0m[33mpersona: A practical user who values product durability and quality over price.
+[0m[33mreviews:
+[0m[33m1. The bottle leaked after a week, not worth it. 
+[0m[33m2. Works okay at first, but broke down quickly. 
+[0m[33m3. Packaging feels cheap and the lotion smells odd.
+[0m[33m<Output>
+[0m[33mSummary: The product shows inconsistent quality and poor durability, making it unreliable for long-term use.
+[0m[33mSuitability: 3/10 — Not recommended for users prioritizing lasting quality.
+[0m[33m
+[0m[33mCase 2 — Acceptable
+[0m[33m<Input>
+[0m[33mpersona: A casual buyer who values decent performance at a fair price.
+[0m[33mreviews:
+[0m[33m1. Does what it says, though not perfect.  
+[0m[33m2. Feels okay on skin, but a bit greasy.  
+[0m[33m3. Good for the price, but could absorb faster.
+[0m[33m<Output>
+[0m[33mSummary: This product offers reasonable value and moderate performance, suitable for those with basic expectations.
+[0m[33mSuitability: 6/10 — Acceptable choice for budget-conscious users.
+[0m[33m
+[0m[33mCase 3 — Highly Recommended
+[0m[33m<Input>
+[0m[33mpersona: A skincare enthusiast seeking visible anti-aging results.
+[0m[33mreviews:
+[0m[33m1. My skin feels smoother and looks brighter.  
+[0m[33m2. Great texture and easy to apply.  
+[0m[33m3. I’ve received compliments after just two weeks!
+[0m[33m<Output>
+[0m[33mSummary: The product delivers visible rejuvenation and enhances skin texture, showing clear anti-aging benefits.
+[0m[33mSuitability: 9/10 — Highly recommended for users seeking effective skincare results.
+[0m[33m
+[0m[33mImportant:
+[0m[33m- You MUST produce both "Summary:" and "Suitability:" exactly as shown.
+[0m[33m- Start your output with "Summary:" and nothing else.
+[0m[33m- Do NOT include any introduction or extra text.
+[0m[33m- Example of the correct output format:
+[0m[33mSummary: <concise description of the product’s strengths, performance, and consistent issues if repeatedly mentioned>
+[0m[33mSuitability: <1–10 rating> — <short justification in one phrase>
+[0m[33m
+[0m[33mHelp write a personalized product summary for a customer based on their purchase persona from product reviews set.
+[0m[33mOutput a CONCISE summary in 2-3 sentences(Summary: ) and 1-10 suitability rating(e.g. Suitability: 8/10), without any prefixes and extra explanations.
+[0m[33m
+[0m[33mInput Format:
+[0m[33m
+[0m[33mpersona: This customer prioritizes durability and functional design in their purchases, especially for organizational and practical uses, and is willing to pay a premium for high-quality products that reliably perform their intended function without causing damage or frustration.
+[0m[33m
+[0m[33mproduct reviews: Review 1: rating 5.0. Five Stars Love this product!! Easy to use on my DIY crafts
+[0m[33m
+[0m[33mReview 2: rating 5.0. Love them Arrived quickly. Very good deal.
+[0m[33m
+[0m[33mReview 3: rating 4.0. Holds gray hair no one knows there is a clip doing the jov=b I like these hair clips because they disappear in gray hair. I can place them in my hair and hide the clip.
+[0m[33m
+[0m[33mReview 4: rating 5.0. Five Stars They are what they are.
+[0m[33m
+[0m[33mReview 5: rating 5.0. Perfect for gray/silver hair! These are really good hair clips!  They clamp well, are easy to handle, and they unclamp without snagging hair.  Good on gray/silver hair.
+[0m[33m
+[0m[33mReview 6: rating 5.0. Knitting hack! I'm a knitter, and I use these little clips to secure the end of the yarn to the whole ball, so you don't end up with tangled yarn.  They are amazing for that and well worth the price.  I ended up ordering another bag since I have so much yarn!
+[0m[33m
+[0m[33mReview 7: rating 5.0. PattiofSpokane Really like them. Since I have white hair I like the stainless steel color.
+[0m[33m
+[0m[33mReview 8: rating 5.0. Works Great I make hair accessories for a living and these were perfect! They didn't snag or pull when you took them out, and they were easy to apply flowers too. Will be purchasing again in the future!
+[0m[33m
+[0m[33mReview 9: rating 5.0. Just what I wanted I am so glad I found these online. For some reason nowhere local has silver snap slips. These seem to be good quality and definitely worth the price for the amount given. I could see myself ordering these again for sure!
+[0m[33m
+[0m[33mReview 10: rating 2.0. Only half the clips were there.. I kept them because I really needed them .. Wasn't 50 clips in pack...but I needed them and decided to keep them.
+[0m[33m
+[0m[33mReview 11: rating 5.0. Great! Arrived early, great for making snap clips with faux leather.
+[0m[33m
+[0m[33mReview 12: rating 5.0. Well made! This was just what I wanted...strong clips that kept my hair in place. Great product and a great buy! I would buy this again and recommend it to friends!
+[0m[33m
+[0m[33mReview 13: rating 2.0. They catch and pull hair out! I bought another brand of these and used them for years with no issues, but these are not designed as well, even though at first glance, they seem exactly the same.  But the round hinge area at the pointed end catches on my hair and pulls hair out when I remove the clips.  I am referring to the plain, uncoated silver clips.  I will go to the beauty supply store next time.
+[0m[33m
+[0m[33mReview 14: rating 2.0. Too small Too small. They are too small to put any real amount of adult hair back. I use these on my own hair to clip back bangs, but these were too small to actually get any real bangs outta my face. Bummer cause I loved the quantity and price!
+[0m[33m
+[0m[33mReview 15: rating 5.0. BUY THESE!! An amazing investment for any woman! Walmart charges an arm and a leg for a 8 pack of these! My biggest concern was if they’d be the same quality as the ones in stores. The answer is YES! And even better!
+[0m[33m
+[0m[33mReview 16: rating 5.0. Holds hair securely in place ... These clips securely hold the hair of little and big girls alike, and you don't have to worry about them breaking. You will love these clips!
+[0m[33m
+[0m[33mReview 17: rating 5.0. Excellent clips. What can I say, they're the perfect snap clips. I use them to help retwist my locs, and I use them to clip my sons hair down overnight under his sleeping scarf. They're sturdy and do what I need them to.
+[0m[33m
+[0m[33mReview 18: rating 1.0. Do not buy! I would not buy these again. I can't even use them. Once you snap them into your hair they are almost impossible to get out with out ripping several strands of hair out. It happens every time!! Very disappointing!
+[0m[33m
+[0m[33mReview 19: rating 1.0. Bad for hair Hair always gets caught in that little circle and can’t be removed without ripping hair out. Bad design.
+[0m[33m
+[0m[33mReview 20: rating 2.0. Catches in hair. These clips are AWFUL! The rivited ends are NOT closed tight enough and CATCH your hair! I lost clumps of hair because these ends are not closed!
+[0m[33m
+[0m[33mReview 21: rating 1.0. Tear your hair out! The construction is such that hair gets tangled every time, and some amount of hair has to be pulled and broken off. Not for me.
+[0m[33m
+[0m[33mReview 22: rating 1.0. Rips out hair en masse I've been looking for clips like this for my newly shorter hair and wanted the silver color to match my Covid grey shade. Functionally they are fine until you try to remove them. I wish I'd taken a photo of the wads of hair my husband had to cut off because it was heartbreaking to lose so much - easily 10-12 strands per clip were permanently caught in between the metal pieces and I was wearing six clips in my hair on Thanksgiving. Such a bummer. Don't waste your money on these. Save your hair!
+[0m[33m
+[0m[33mReview 23: rating 1.0. Horrible! Just what I wanted....100 faulty clips to deal with!  The metal where the rivet attaches to the top is so rough that it constantly rips my hair out.  I was trying to grow out my fringe, but this product ripped my bangs to threads!
+[0m[33m
+[0m[33mReview 24: rating 1.0. Horrible! Horrible! They catch on my hair and cause it to break. Unusable.
+[0m[33m
+[0m[33mReview 25: rating 1.0. HORRIBLE CLIPS THAT SNAG AND BREAK YOUR HAIR! HORRIBLE CLIPS that snag and break your hair
+[0m[33m
+[0m[33mReview 26: rating 1.0. Don't  do it... save your money These things are horrible!!  Too stiff opening.  The little, what looks like a rivet at the very end ...Serving no purpose... RIPS out your hair when removing.  Waste of money : (
+[0m[33m
+[0m[33mReview 27: rating 2.0. Gets snagged in hair. Kept getting snagged on my hair when removing it at the end of wearing.  The one solution I found for this was getting a glue gun and making sure that the ends were covered.  I won’t buy again.
+[0m[33m
+[0m[33mReview 28: rating 2.0. Ok They are just ok they pull my hair and no one like that. Metal quality good. They hold.
+[0m[33m
+[0m[33mReview 29: rating 1.0. Pulls out my hair. If you look closely, there is a small open circle at the pointed end. One side is rough and catches my hair when I carefully remove it. It rips out at least five strands of hair. Disappointed.
+[0m[33m
+[0m[33mReview 30: rating 1.0. These are not for use... Don't buy these. These are so cheaply made and all they do is catch and tear your hair out.
+[0m[33m
+[0m[33mReview 31: rating 2.0. Sharp edges. I have long silver hair and I was really happy to find this color. The edges are REALLY SHARP and they get stuck in my hair. I really don’t use them.
+[0m[33m
+[0m[33mReview 32: rating 5.0. Work great They do exactly what they're supposed to do and there's a bunch of them in the bag, so they'll last if you lose a few. I have grey hair, so I got the silver color to blend in better. As others have mentioned, the round punch hole will catch on your hair when you take them out. It was fairly obvious that the problem could be solved by flattening the punch hole. I took a pair of regular pliers (not needle-nosed) and flattened each of the clips. It didn't even take 5 minutes of effort and they work just awesome as before, but now they don't yank out my hair.
+[0m[33m
+[0m[33mReview 33: rating 2.0. Hair gets caught on rivet. My hair gets caught in little riveit. Tears hair while trying to remove clip.
+[0m[33m
+[0m[33mReview 34: rating 1.0. Catches and tears curly hair when trying to remove I have grey, naturally curly hair.  These clips go in easily and tear curly hair when trying to remove.  I am not going to experiment with this type of product on my hair ever again.
+[0m[33m
+[0m[33mI also provide the real review written by the customer who shares this persona and purchased the product. Use it strictly as additional context to understand the persona's priorities; do not copy or mirror the review.
+[0m[33mrating 1.0. They Pull and Break Hair If you notice in the picture of the product there is a small circular rivet holding the two pieces together.  This rivet is not completely welded in place so it catches your hair and when you try and remove these from your hair, your hair will catch on this rivet and break or be pulled out.... I have thick curly hair and use these types of clips all the time.  I just threw out the entire bag of these as they are pulling and breaking my hair.  TERRIBLE PRODUCT!!<|im_end|>
+[0m[33m<|im_start|>assistant
+[0m[32mSummary: While many users praise the clips for their strong hold, ease of use, and value for craft and hair applications, a consistent and serious issue emerges: the poorly finished rivet design frequently catches and pulls hair, causing pain, breakage, and loss—especially for those with curly or thick hair. Despite their functional appearance and durability in non-hair uses (e.g., knitting), the risk of hair damage undermines reliability for primary use. Suitability: 4/10 — Not recommended for users prioritizing safe, frustration-free performance, particularly in hair applications.<|im_end|>[0m
+tinker_cookbook.utils.misc_utils:20 [INFO] Starting step
+tinker_cookbook.utils.misc_utils:23 [INFO] step took 0.00 seconds
+tinker_cookbook.utils.ml_log:143 [INFO] Wrote metrics to /home/yumingfeng/repo/SumForU/results/sft_personalized_model/metrics.jsonl
+tinker_cookbook.utils.ml_log:195 [INFO] 
+[3m                   Step 61                   [0m
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━┓
+┃[1;35m [0m[1;35mMetric                        [0m[1;35m [0m┃[1;35m [0m[1;35mValue   [0m[1;35m [0m┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━┩
+│[36m [0m[36mepoch                         [0m[36m [0m│[32m [0m[32m3       [0m[32m [0m│
+│[36m [0m[36mlearning_rate                 [0m[36m [0m│[32m [0m[32m0.000132[0m[32m [0m│
+│[36m [0m[36mnum_loss_tokens               [0m[36m [0m│[32m [0m[32m710     [0m[32m [0m│
+│[36m [0m[36mnum_sequences                 [0m[36m [0m│[32m [0m[32m16      [0m[32m [0m│
+│[36m [0m[36mnum_tokens                    [0m[36m [0m│[32m [0m[32m60628   [0m[32m [0m│
+│[36m [0m[36mprogress                      [0m[36m [0m│[32m [0m[32m0.344444[0m[32m [0m│
+│[36m [0m[36mtime/get_batch                [0m[36m [0m│[32m [0m[32m0.457257[0m[32m [0m│
+│[36m [0m[36mtime/step                     [0m[36m [0m│[32m [0m[32m0.000770[0m[32m [0m│
+│[36m [0m[36mtime/total                    [0m[36m [0m│[32m [0m[32m7.728915[0m[32m [0m│
+│[36m [0m[36mtrain_mean_nll                [0m[36m [0m│[32m [0m[32m0.576718[0m[32m [0m│
+└────────────────────────────────┴──────────┘
+tinker_cookbook.utils.ml_log:236 [INFO] Logging to: https://wandb.ai/230project/SumForU/runs/riapt5db
+tinker_cookbook.utils.misc_utils:20 [INFO] Starting get_batch
+tinker_cookbook.utils.misc_utils:23 [INFO] get_batch took 0.15 seconds
+tinker_cookbook.supervised.train:253 [INFO] [33m<|im_start|>user
+[0m[33mYou are an intelligent review summarization assistant.  
+[0m[33mYour task is to read a set of user reviews and generate a concise, decision-oriented summary that reflects what the target persona values most, while identifying consistently mentioned weaknesses that could affect satisfaction.
+[0m[33m
+[0m[33mInstructions:
+[0m[33m1. Goal:
+[0m[33m   Generate a 2–3 sentence summary that helps the persona quickly decide whether the product fits their needs.
+[0m[33m
+[0m[33m2. Tone:
+[0m[33m   - Neutral but empathetic (objective and informative, not promotional).
+[0m[33m   - Avoid repetitive listing; merge overlapping opinions naturally.
+[0m[33m
+[0m[33m3. Reasoning Process
+[0m[33m   Follow this structured reasoning before producing the final output:
+[0m[33m      Step 1. **Interpret Persona:** Identify the persona’s core priorities and evaluation criteria (e.g., durability, price, comfort). Determine what the persona values most and what factors matter for their satisfaction.
+[0m[33m      Step 2. **Analyze Reviews:** Detect recurring patterns across rating levels while filtering out noise and isolated opinions. Focus on themes, strengths, and weaknesses mentioned multiple times, and ignore isolated or contradictory negatives that appear only once.
+[0m[33m      Step 3. **Integrate Evidence:** Synthesize representative insights that reflect both positive and negative aspects relevant to the persona. Ensure that these insights align with the persona’s values and are grounded in multiple review observations.
+[0m[33m      Step 4. **Write Summary:** Compose a 2–3 sentence personalized summary that integrates persona priorities with aggregated user perspectives. Include a **1–10 suitability rating** with a concise justification referencing consistent evidence from the reviews.
+[0m[33m
+[0m[33m4. Content requirements:
+[0m[33m   - Be concise. Do not invent information outside the reviews.
+[0m[33m   - Suitability rating reflects the overall match between the persona’s expectations and review sentiment (1–10).
+[0m[33m
+[0m[33mFew-shot Examples:
+[0m[33m
+[0m[33mCase 1 — Not Recommended
+[0m[33m<Input>
+[0m[33mpersona: A practical user who values product durability and quality over price.
+[0m[33mreviews:
+[0m[33m1. The bottle leaked after a week, not worth it. 
+[0m[33m2. Works okay at first, but broke down quickly. 
+[0m[33m3. Packaging feels cheap and the lotion smells odd.
+[0m[33m<Output>
+[0m[33mSummary: The product shows inconsistent quality and poor durability, making it unreliable for long-term use.
+[0m[33mSuitability: 3/10 — Not recommended for users prioritizing lasting quality.
+[0m[33m
+[0m[33mCase 2 — Acceptable
+[0m[33m<Input>
+[0m[33mpersona: A casual buyer who values decent performance at a fair price.
+[0m[33mreviews:
+[0m[33m1. Does what it says, though not perfect.  
+[0m[33m2. Feels okay on skin, but a bit greasy.  
+[0m[33m3. Good for the price, but could absorb faster.
+[0m[33m<Output>
+[0m[33mSummary: This product offers reasonable value and moderate performance, suitable for those with basic expectations.
+[0m[33mSuitability: 6/10 — Acceptable choice for budget-conscious users.
+[0m[33m
+[0m[33mCase 3 — Highly Recommended
+[0m[33m<Input>
+[0m[33mpersona: A skincare enthusiast seeking visible anti-aging results.
+[0m[33mreviews:
+[0m[33m1. My skin feels smoother and looks brighter.  
+[0m[33m2. Great texture and easy to apply.  
+[0m[33m3. I’ve received compliments after just two weeks!
+[0m[33m<Output>
+[0m[33mSummary: The product delivers visible rejuvenation and enhances skin texture, showing clear anti-aging benefits.
+[0m[33mSuitability: 9/10 — Highly recommended for users seeking effective skincare results.
+[0m[33m
+[0m[33mImportant:
+[0m[33m- You MUST produce both "Summary:" and "Suitability:" exactly as shown.
+[0m[33m- Start your output with "Summary:" and nothing else.
+[0m[33m- Do NOT include any introduction or extra text.
+[0m[33m- Example of the correct output format:
+[0m[33mSummary: <concise description of the product’s strengths, performance, and consistent issues if repeatedly mentioned>
+[0m[33mSuitability: <1–10 rating> — <short justification in one phrase>
+[0m[33m
+[0m[33mHelp write a personalized product summary for a customer based on their purchase persona from product reviews set.
+[0m[33mOutput a CONCISE summary in 2-3 sentences(Summary: ) and 1-10 suitability rating(e.g. Suitability: 8/10), without any prefixes and extra explanations.
+[0m[33m
+[0m[33mInput Format:
+[0m[33m
+[0m[33mpersona: This customer prioritizes product functionality and accurate color matching, with a strong sensitivity to fit and design flaws; they are likely to abandon products that don’t perform reliably or meet their specific physical or aesthetic needs, and are less forgiving of minor defects that impact usability.
+[0m[33m
+[0m[33mproduct reviews: Review 1: rating 5.0. It actually works and stays on! [[VIDEOID:4cf3f08ba259c5134cbb627b43a58f7b]] I was skeptical when I bought  this because other stamp eyeliner I have bought never lived up to what ther promised but this one one it goes on wonderfully and it stays on all day!  I love how my eyes look.  This is my daughter in the video but I used it as well and will def buy again
+[0m[33m
+[0m[33mReview 2: rating 1.0. Only one in the package not two . Deceiving picture. There's only one item not two like in the picture. The wing is awful. Not buying it again.
+[0m[33m
+[0m[33mReview 3: rating 3.0. a blessing and a curse i love it!! but i don’t... it’s an amazing product!! but the tip of it is so thick it’s hard to actually put the eyeliner on, other than that it’s a pretty good product
+[0m[33m
+[0m[33mReview 4: rating 1.0. NOT FOR WATERLINE! SO DISAPPOINTED! WOULD NOT ADHERE NO MATTER WHAT TO MY WATER LINE!
+[0m[33m
+[0m[33mReview 5: rating 5.0. Creates beautiful wings with a little practice. This makes drawing wings a snap! You have to work with it a little. Too much pressure and it stamps too much product which creates a mess. Too little pressure and it’s not a clean line. You also have to make sure you hold the angle correctly on each side. Otherwise you have one higher wing and one lower wing. Overall it’s cut my wing application in half and looks much better than if I freehand it!
+[0m[33m
+[0m[33mReview 6: rating 5.0. Worth it I'm a makeup junkie and extremely picky with products, just to start out. I don't actually have any issues with winged liner but I've been dealing with some shaking issues so thought this might make my routine easier. Not a lot of trial and error, it''s very simple to use, and creates a lovely and slightly curved wing. Now PERSONALLY I prefer a wing that is straight, but that's just preference and no reflection on the product's efficiency. I bought the 8 size and am considering trying the 10, I can easily see myself using this on a regular basis.
+[0m[33m
+[0m[33mReview 7: rating 1.0. Cheap Product erases very quickly and is not easy to apply..  poor quality the product is watered in all hands.
+[0m[33m
+[0m[33mReview 8: rating 3.0. Not as easy to use as I anticipated.. I had been wanting to buy one of these eye liner stamps for a while now since for some reason I can’t seem to make a nice looking winged look to save my life! So I was super stoked to receive this eyeliner and on my very first try I did it perfectly on my right eye then I tried to do my on my left eye and it was awful! And then I kept practicing and I couldn’t get it to look even close to what it’s supposed to look like and I still can’t seem to do it right. Then when removing it, it makes a terrible mess and smears the eyeliner all over my face so I just gave up...for now anyway! I will get it eventually! (Hopefully) Any helpful tips would be greatly appreciated!!!
+[0m[33m
+[0m[33mReview 9: rating 1.0. Not great Overall, this was not easy to use & left a lot of smears.
+[0m[33m
+[0m[33mReview 10: rating 2.0. Smudge It’s easy enough to put on problem is it won’t stay on. If you sweat or slightly get hit it starts to melt. Sadly the other reviews had way better luck that I had.
+[0m[33m
+[0m[33mReview 11: rating 5.0. Bye ratchet stye!!! I hate you Ok most eyeliners run on me because I have sensitive oily eyes and I tend to get styes often. So far no stye or runny eye makeup even after shedding a few tears 😢!! I use the mascara as well.
+[0m[33m
+[0m[33mReview 12: rating 3.0. Works nicely, but NOT WATERPROOF!!!!! This was easy to use...the eyeliner went on smoothly and was easy to control, and thanks to the stamp I had decent looking wings for the first time. BUT...this stuff is NOT WATERPROOF!!!!!! I was able to wipe off my first few tries w a plain, slightly wet tissue - wet w WATER ONLY - and when I woke up this morning - WITHOUT having removed my eye makeup last nite - the eyeliner, the wing stamps, ALL OF IT - just GONE. Like I’d never even applied it. I’ll put it on again today and see how many hours it lasts, but for now I’m really disappointed in the obvious falsehood the company is telling about this product being waterproof...
+[0m[33m
+[0m[33mReview 13: rating 2.0. Only received left stamp Only received a stamp for the left eye. The other end is the liner. If I were to flip it and use it on the right eye, the wing would point down. Completely stupid and useless. Beware before purchasing item as there is no way to order both pens.
+[0m[33m
+[0m[33mReview 14: rating 5.0. Sits perfectly over fine lines! This stuff is awesome. It hard to perfect the cat eye. Especially, if you are in your 30’s or 40’s and you have some fine lines around your eyes. You draw a straight line, with one end, then kinda use the other end as a “stamp”. It really works. Best I’ve found yet.
+[0m[33m
+[0m[33mReview 15: rating 1.0. not worth it waste of money cheap wears off fast and looks ugly when applied
+[0m[33m
+[0m[33mReview 16: rating 2.0. Would find a different brand. Cool concept just not this product This product was easy to use but the one stamp end kept leaking so I was getting liner all over my hands. And smudge proof... Eh.. not really it stayed on decently but definitely did move if you touched it .
+[0m[33m
+[0m[33mReview 17: rating 4.0. Reccomend for beginners/Strugglers This is my first time ever attempting to do eyeliner and I say this turned out pretty good. It was very easy to use. For someone beginning to do eyeliner or struggling to do their eyeliner, I would recommend.
+[0m[33m
+[0m[33mReview 18: rating 1.0. Review The product was okay, it wasn't smudge proof or water proof. The cap was also broken.
+[0m[33m
+[0m[33mReview 19: rating 1.0. Mess of a product Opened this product and took off the cap for the stamp end only to have the liquid liner POUR out all over my hands, clothes, and the seat of my car. Clearly cheaply made, and naturally I threw it away immediately but they won’t refund me unless I return sooo I guess that’s just money down the literal drain. Very unimpressed, and I was so excited to try this.
+[0m[33m
+[0m[33mReview 20: rating 5.0. Efficient little wand [[VIDEOID:43f3873725d0ffe56a228d217c6fa977]] Despite  my splotchiness,  I love this!!  I am NOT the best at eyeliner.  Quite frankly I suck at makeup all together!  This little tool really made it a lot easier for me.  I just gotta steady my hand more and keep practicing!  Once I've used  it a few times  I'm going to come back  and update my review ^_^Update: absolutely worth my money!  No smudging and long lasting!!
+[0m[33m
+[0m[33mReview 21: rating 1.0. But this if you wanna look like a raccoon within an hour Not at all smudge proof! Wore this too work and within an hour my eyes started to look like a raccoon eyes! Not cool at all! I’ve had way better eyeliner that were cheaper than this! It was super hard to apply as the tip was very thick. So disappointed
+[0m[33m
+[0m[33mReview 22: rating 1.0. Muy malo Me dejó la tapa en la mano, horrible no es aprueba de agua ni nada
+[0m[33m
+[0m[33mI also provide the real review written by the customer who shares this persona and purchased the product. Use it strictly as additional context to understand the persona's priorities; do not copy or mirror the review.
+[0m[33mrating 2.0. Cap problems My problem with this eyeliner is not that it's not waterproof but the inside of the cap continues to come out on top of the liner. Making it really annoying to try and use.<|im_end|>
+[0m[33m<|im_start|>assistant
+[0m[32mSummary: The product delivers reliable functionality for creating precise winged eyeliner with ease, particularly beneficial for beginners or those with shaky hands, and many users report long-lasting wear and good performance. However, consistent complaints about poor waterproofing, smudging, leaking, and design flaws like missing right-eye stamps or defective caps indicate critical reliability and quality control issues that would frustrate a user highly sensitive to fit and performance flaws. Suitability: 4/10 — Marginal fit due to frequent design and durability flaws undermining core functionality.<|im_end|>[0m
+tinker_cookbook.utils.misc_utils:20 [INFO] Starting step
