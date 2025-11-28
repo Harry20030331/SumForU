@@ -11,11 +11,11 @@ Usage (examples):
         # Generate SFT data using default paths
         python -m dataset.synthesize_data
 
-        # Generate only RL prompts (train/dev), keeping existing SFT JSONL
-        python -m dataset.synthesize_data --mode rl --rl-output dataset/data/processed/rl
+        # Generate only RL prompts (train split), keeping existing SFT JSONL
+        python -m dataset.synthesize_data --mode rl --rl-output dataset/data/processed/rl/v1_rl_train.jsonl
 
-        # Limit to first 200 persona entries and use a smaller validation split
-        python -m dataset.synthesize_data --mode rl --max-prompts 200 --dev-count 100
+        # Limit to first 200 persona entries for a quicker RL run
+        python -m dataset.synthesize_data --mode rl --max-prompts 200
 
 The script assumes the preprocessed persona dataset lives at
 ``dataset/data/interim/v1_preprocessed.json`` and will write outputs to
@@ -30,19 +30,18 @@ import json
 import random
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, Sequence
+from typing import Sequence
 
 from dataset import INTERIM_DIR, RL_DIR, SFT_DIR
 from scripts.test import config
-from scripts.test.utils import TinkerSampler, build_user_prompt, clear_content
-from tinker_cookbook import renderers
+from tqdm import tqdm
 
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
 DEFAULT_INPUT_PATH = INTERIM_DIR / "v1_preprocessed.json"
 DEFAULT_SFT_OUTPUT = SFT_DIR / "v1_synthesized_output.jsonl"
-DEFAULT_RL_OUTPUT = RL_DIR
+DEFAULT_RL_OUTPUT = RL_DIR / "v1_rl_train.jsonl"
 DEFAULT_RUBRIC = (
     "Does the assistant deliver a concise 2-3 sentence summary that focuses on "
     "evidence from the reviews most relevant to the persona, and provide a "
@@ -72,22 +71,32 @@ class PersonaRecord:
         )
 
 
+def build_user_prompt(persona: str, reviews: str) -> str:
+    """Fill the config.USER_PROMPT template with persona and reviews text."""
+
+    template = config.USER_PROMPT
+    return template.replace("<persona>", persona).replace("<reviews>", reviews)
+
+
 # ---------------------------------------------------------------------------
 # SFT data generation
 # ---------------------------------------------------------------------------
 async def _synthesize_single_summary(
-    sampler: TinkerSampler,
+    sampler,
     record: PersonaRecord,
     include_reference: bool = True,
 ) -> dict:
     """Generate one conversation datum for SFT training."""
     system_prompt = config.SYSTEM_PROMPT.strip()
-    user_template = config.USER_PROMPT.strip()
     user_prompt = build_user_prompt(record.persona, record.reviews).strip()
 
     if include_reference and record.reference_output:
         reference_block = "\n".join(reference.strip() for reference in record.reference_output if reference)
         user_prompt += f"{REFERENCE_PROMPT_SUFFIX}{reference_block}"
+
+    # Lazily import heavy dependencies to keep RL-only runs lightweight.
+    from scripts.test.utils import clear_content
+    from tinker_cookbook import renderers
 
     messages = [
         renderers.Message(role="system", content=system_prompt),
@@ -115,21 +124,23 @@ async def generate_sft_dataset(
     if not data:
         raise ValueError("No persona records provided for SFT synthesis.")
 
+    from scripts.test.utils import TinkerSampler
+
     sampler = TinkerSampler(model_name=model_name, temperature=0.7, max_tokens=512, top_p=0.9)
     semaphore = asyncio.Semaphore(max(concurrency, 1))
+    progress = tqdm(total=len(data), desc="[SFT] Generating", unit="prompt")
 
     async def bounded(idx: int, record: PersonaRecord) -> tuple[int, dict]:
         async with semaphore:
             synthesized = await _synthesize_single_summary(sampler, record)
-            return idx, synthesized
+        progress.update(1)
+        return idx, synthesized
 
-    tasks = [bounded(idx, record) for idx, record in enumerate(data)]
-    collected: list[tuple[int, dict]] = []
-
-    for idx, task in enumerate(asyncio.as_completed(tasks), start=1):
-        result = await task
-        collected.append(result)
-        print(f"[SFT] completed {idx}/{len(tasks)} prompts", flush=True)
+    try:
+        tasks = [bounded(idx, record) for idx, record in enumerate(data)]
+        collected: list[tuple[int, dict]] = await asyncio.gather(*tasks)
+    finally:
+        progress.close()
 
     collected.sort(key=lambda pair: pair[0])
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -142,24 +153,21 @@ async def generate_sft_dataset(
 # ---------------------------------------------------------------------------
 # RL prompt generation
 # ---------------------------------------------------------------------------
-def build_prompt_conversation(record: PersonaRecord, *, include_system: bool) -> list[dict]:
-    messages: list[dict] = []
-    if include_system:
-        messages.append({"role": "system", "content": config.SYSTEM_PROMPT.strip()})
-    user_prompt = build_user_prompt(record.persona, record.reviews)
-    messages.append({"role": "user", "content": user_prompt})
+def build_prompt_conversation(record: PersonaRecord) -> list[dict]:
+    messages: list[dict] = [
+        {"role": "system", "content": config.SYSTEM_PROMPT.strip()},
+        {"role": "user", "content": build_user_prompt(record.persona, record.reviews)},
+    ]
     return messages
 
 
 def generate_rl_dataset(
     data: Sequence[PersonaRecord],
-    train_output: Path,
-    dev_output: Path,
+    output_path: Path,
     rubric: str = DEFAULT_RUBRIC,
-    dev_count: int = 500,
     seed: int | None = 42,
 ) -> None:
-    """Write RL prompts for train/dev splits."""
+    """Write RL prompts to a single JSONL file."""
     if not data:
         raise ValueError("No persona records provided for RL synthesis.")
 
@@ -167,37 +175,17 @@ def generate_rl_dataset(
         random.seed(seed)
     shuffled = list(data)
     random.shuffle(shuffled)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    dev_count = max(0, min(dev_count, len(shuffled)))
-    dev_records = shuffled[:dev_count]
-    train_records = shuffled[dev_count:]
-
-    train_output.parent.mkdir(parents=True, exist_ok=True)
-    dev_output.parent.mkdir(parents=True, exist_ok=True)
-
-    with train_output.open("w", encoding="utf-8") as train_f:
-        for record in train_records:
+    with output_path.open("w", encoding="utf-8") as train_f:
+        for record in shuffled:
             payload = {
-                "prompt_conversation": build_prompt_conversation(record, include_system=True),
+                "prompt_conversation": build_prompt_conversation(record),
                 "reference": "\n".join(record.reference_output) or None,
                 "rubric": rubric,
             }
             train_f.write(json.dumps(payload, ensure_ascii=False) + "\n")
-
-    with dev_output.open("w", encoding="utf-8") as dev_f:
-        for record in dev_records:
-            payload = {
-                "prompt_conversation": build_prompt_conversation(record, include_system=False),
-                "reference": "\n".join(record.reference_output) or None,
-                "rubric": rubric,
-            }
-            dev_f.write(json.dumps(payload, ensure_ascii=False) + "\n")
-
-    print(
-        f"[RL] Wrote {len(train_records)} train prompts to {train_output} and "
-        f"{len(dev_records)} dev prompts to {dev_output}"
-    )
-
+    print(f"[RL] Wrote {len(shuffled)} prompts to {output_path}")
 
 # ---------------------------------------------------------------------------
 # CLI helpers
@@ -222,10 +210,13 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
                         help="Select which dataset to generate in this run.")
     parser.add_argument("--input", type=Path, default=DEFAULT_INPUT_PATH)
     parser.add_argument("--sft-output", type=Path, default=DEFAULT_SFT_OUTPUT)
-    parser.add_argument("--rl-output", type=Path, default=DEFAULT_RL_OUTPUT,
-                        help="Directory or filename where RL JSONL files will be written.")
+    parser.add_argument(
+        "--rl-output",
+        type=Path,
+        default=DEFAULT_RL_OUTPUT,
+        help="Output JSONL file for RL prompts (defaults to dataset/data/processed/rl/v1_rl_train.jsonl)",
+    )
     parser.add_argument("--rubric", type=str, default=DEFAULT_RUBRIC)
-    parser.add_argument("--dev-count", type=int, default=500)
     parser.add_argument("--max-prompts", type=int, default=None)
     parser.add_argument("--model-name", type=str, default=DEFAULT_MODEL_NAME)
     parser.add_argument("--concurrency", type=int, default=8)
@@ -249,20 +240,14 @@ def main(argv: Sequence[str] | None = None) -> None:
         )
 
     elif args.mode == "rl":
-        rl_base = args.rl_output
-        if rl_base.suffix == ".jsonl":
-            train_output = rl_base
-            dev_output = rl_base.with_name(f"{rl_base.stem}_dev.jsonl")
-        else:
-            train_output = rl_base / "train.jsonl"
-            dev_output = rl_base / "dev.jsonl"
+        output_path = args.rl_output
+        if output_path.suffix != ".jsonl":
+            raise ValueError("--rl-output must point to a .jsonl file, e.g., dataset/data/processed/rl/v1_rl_train.jsonl")
 
         generate_rl_dataset(
             records,
-            train_output=train_output,
-            dev_output=dev_output,
+            output_path=output_path,
             rubric=args.rubric,
-            dev_count=args.dev_count,
             seed=args.seed,
         )
     else:

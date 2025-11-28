@@ -168,7 +168,7 @@ class PrometheusEvalPairwisePreferenceGroupBuilder(EnvGroupBuilder):
         return [response], is_valid
 
     async def compute_group_rewards(
-        self, trajectory_group: list[Trajectory]
+        self, trajectory_group: list[Trajectory], _env_group: Sequence[Env]
     ) -> list[tuple[float, Metrics]]:
         assert all(len(trajectory.transitions) == 1 for trajectory in trajectory_group)
         response_tuples = await asyncio.gather(

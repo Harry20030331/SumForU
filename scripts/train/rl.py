@@ -7,7 +7,7 @@ parent_dir = os.path.abspath(os.path.join(current_dir, os.pardir))
 sys.path.append(parent_dir)
 
 import chz
-from datasets import Dataset, load_dataset
+from datasets import Dataset, concatenate_datasets, load_dataset
 import numpy as np
 import tinker
 from tinker import types
@@ -139,6 +139,7 @@ class WinRateVsBaseOnTestEvaluator(SamplingClientEvaluator):
 class PrometheusEvalDatasetBuilderFromJSONL(HFPrometheusEvalDatasetBuilder):
     train_data_path: str
     test_data_path: str | None = None
+    repeat_factor: int = 1
 
     def get_train_and_test_datasets(self) -> tuple[Dataset, Dataset | None]:
         train_ds = load_dataset("json", data_files=self.train_data_path, split="train")
@@ -161,6 +162,10 @@ class PrometheusEvalDatasetBuilderFromJSONL(HFPrometheusEvalDatasetBuilder):
         train_dataset = train_ds.map(_prep)
         test_dataset = test_ds.map(_prep) if test_ds is not None else None
 
+        repeat_factor = max(1, self.repeat_factor)
+        if repeat_factor > 1:
+            train_dataset = concatenate_datasets([train_dataset] * repeat_factor)
+
         return train_dataset, test_dataset
 
 
@@ -176,6 +181,7 @@ def build_config(
     batch_size: int,
     group_size: int,
     eval_every: int,
+    train_repeat: int,
     wandb_project: str | None = None,
     wandb_name: str | None = None,
 ) -> train.Config:
@@ -185,6 +191,7 @@ def build_config(
         renderer_name=renderer_name,
         train_data_path=train_data_path,
         test_data_path=test_data_path,
+        repeat_factor=train_repeat,
     )
     builder = PrometheusEvalPairwisePreferenceRLDatasetBuilder(
         comparison_dataset_builder=comparison_dataset_builder,
@@ -224,16 +231,17 @@ def main(
     model_name: str = "Qwen/Qwen3-4B-Instruct-2507",
     reward_model_name: str = "Qwen/Qwen3-235B-A22B-Instruct-2507",
     reward_model_path: str | None = None,
-    train_data_path: str = str((RL_DIR / "train.jsonl").resolve()),
-    test_data_path: str = str((RL_DIR / "dev.jsonl").resolve()),
-    log_path: str = "results/rl_with_rubric_rm",
-    max_length: int = 1024,
+    train_data_path: str = str((RL_DIR / "v1_rl_train.jsonl").resolve()),
+    test_data_path: str = str((RL_DIR / "v1_rl_test.jsonl").resolve()),
+    log_path: str = "results/rl_personalized_model",
+    max_length: int = 4096,
     learning_rate: float = 4e-5,
-    batch_size: int = 128,
+    batch_size: int = 16,
     group_size: int = 4,
     eval_every: int = 5,
-    wandb_project: str = "tinker_personalization",
-    wandb_name: str = "rl_with_rubric_rm_qwen3_4b",
+    train_repeat: int = 5,   # repeat training data this many times, treat as an epoch multiplier
+    wandb_project: str = "SumForU",
+    wandb_name: str = "rl_4b_v1",
 ):
     load_dotenv()
     config = build_config(
@@ -248,6 +256,7 @@ def main(
         batch_size=batch_size,
         group_size=group_size,
         eval_every=eval_every,
+        train_repeat=train_repeat,   
         wandb_project=wandb_project,
         wandb_name=wandb_name,
     )

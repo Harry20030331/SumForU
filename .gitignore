@@ -2,6 +2,8 @@ __pycache__/
 .env
 data.json
 .vscode/
+.copilot/
 
 # Ignore config.py if it contains sensitive information.
 scripts/test/config.py
+results/
