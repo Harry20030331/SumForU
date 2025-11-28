@@ -20,8 +20,8 @@ MODEL_NAME = "Qwen/Qwen3-4B-Instruct-2507"
 # MODEL_NAME = "Qwen/Qwen3-30B-A3B-Instruct-2507"
 
 # Tinker model paths
-SFT_MODEL_PATH = "tinker://a162e531-75cd-4d1e-b480-e554614a9677/sampler_weights/final"
-DPO_MODEL_PATH = "tinker://1ac4b6e1-095d-493f-83d5-5ab4067e651f/sampler_weights/final"
+SFT_MODEL_PATH = "tinker://1adb47b4-105b-5a29-96fc-d04511e11a1c:train:0/sampler_weights/final"
+RL_MODEL_PATH = "tinker://2743d8d3-5f60-540d-8149-64ca5da31cad:train:0/sampler_weights/final"
 
 # Prompt settings
 PROMPT_MODE = JSON  # Options: 'direct' or 'json'
@@ -39,7 +39,7 @@ product reviews: <reviews>
 PROMPT_PATH = "dataset/v1_test_preprocessed.json"  # Used if PROMPT_MODE is 'json'
 
 # System prompt settings
-USE_SYSTEM_PROMPT = False
+USE_SYSTEM_PROMPT = True
 SYSTEM_PROMPT = """
 You are an intelligent review summarization assistant.  
 Your task is to read a set of user reviews and generate a concise, decision-oriented summary that reflects what the target persona values most, while identifying consistently mentioned weaknesses that could affect satisfaction.

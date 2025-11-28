@@ -150,11 +150,6 @@ Tweak `scripts/test/config.py` to point at different checkpoints, prompts, or pr
 
 ## Experiment Tracking & Outputs
 
-- **W&B** – both SFT and RL scripts log metrics, gradients, and checkpoint metadata to Weights & Biases. Authenticate with `wandb login` before launching training.
-- **`results/` directory** – contains example inference dumps (`v1_test_baseline.json`, `v1_test_sft.json`) and the `sft_personalized_model/` wandb run folder for reference.
-
-## Acknowledgements
-
 - The [Tinker Cookbook](https://tinker-docs.thinkingmachines.ai/) for providing the training primitives used throughout the project.
 - The [SALT-NLP/cs329x_hw2](https://github.com/SALT-NLP/cs329x_hw2) team for open-sourcing prompts and evaluation patterns that informed our baseline experiments.
 - Everyone who contributed anonymized review data powering SumForU’s personas.

@@ -1,0 +1,43 @@
+{
+  "learning_rate": 4e-05,
+  "dataset_builder": {
+    "comparison_dataset_builder": {
+      "model_name_for_tokenizer": "Qwen/Qwen3-4B-Instruct-2507",
+      "renderer_name": "qwen3_instruct",
+      "train_data_path": "/home/yumingfeng/repo/SumForU/dataset/data/processed/rl/v1_rl_train.jsonl",
+      "test_data_path": "/home/yumingfeng/repo/SumForU/dataset/data/processed/rl/v1_rl_test.jsonl",
+      "repeat_factor": 5
+    },
+    "rm_renderer_name": "qwen3_instruct",
+    "rm_model_name_for_tokenizer": "Qwen/Qwen3-235B-A22B-Instruct-2507",
+    "batch_size": 16,
+    "tournament_pattern": "all_pairs_both_ways",
+    "rm_model_path": null,
+    "group_size": 4,
+    "base_url": null
+  },
+  "model_name": "Qwen/Qwen3-4B-Instruct-2507",
+  "max_tokens": 4096,
+  "temperature": 1.0,
+  "compute_post_kl": false,
+  "evaluator_builders": [
+    "<class 'function'>"
+  ],
+  "lora_rank": 32,
+  "kl_penalty_coef": 0.0,
+  "kl_discount_factor": 0.0,
+  "loss_fn": "importance_sampling",
+  "num_substeps": 1,
+  "wandb_project": "SumForU",
+  "wandb_name": "rl_4b_v1",
+  "log_path": "results/rl_personalized_model",
+  "base_url": null,
+  "enable_trace": false,
+  "remove_constant_reward_groups": false,
+  "eval_every": 5,
+  "save_every": 20,
+  "load_checkpoint_path": null,
+  "async_config": null,
+  "stream_minibatch_config": null,
+  "num_groups_to_log": 4
+}

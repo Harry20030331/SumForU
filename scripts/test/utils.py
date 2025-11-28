@@ -80,7 +80,7 @@ def build_model(model_type: str) -> TinkerSampler:
     elif model_type == config.SFT:
         model_path = config.SFT_MODEL_PATH
     elif model_type == config.RL:
-        model_path = config.DPO_MODEL_PATH
+        model_path = config.RL_MODEL_PATH
     else:
         raise ValueError("Invalid model_type. Choose from ['baseline', 'sft', 'rl'].")
 
@@ -179,6 +179,17 @@ def update_config_from_args(args):
     Args:
         args (argparse.Namespace): Parsed command-line arguments.
     """
+    # Update prompt mode before other overrides that depend on it
+    if hasattr(args, "active_mode") and args.active_mode:
+        config.PROMPT_MODE = args.active_mode
+
+    # Update prompt input path/text when provided
+    if hasattr(args, "user_input") and args.user_input:
+        if config.PROMPT_MODE == config.JSON:
+            config.PROMPT_PATH = args.user_input
+        else:
+            config.USER_PROMPT = args.user_input
+
     # Update temperature
     if hasattr(args, "temperature") and args.temperature is not None:
         config.TEMPERATURE = args.temperature

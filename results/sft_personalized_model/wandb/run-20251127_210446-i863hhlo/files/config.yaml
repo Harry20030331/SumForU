@@ -1,0 +1,103 @@
+_wandb:
+    value:
+        cli_version: 0.22.2
+        e:
+            0ks7ccmtgq5df0eck3yystc7erzmac3s:
+                cpu_count: 12
+                cpu_count_logical: 24
+                cudaVersion: "12.7"
+                disk:
+                    /:
+                        total: "1081101176832"
+                        used: "118455402496"
+                email: yumingf@stanford.edu
+                executable: /root/anaconda3/envs/hw2/bin/python
+                git:
+                    commit: d0907eaa1981413e2c3b71cfd65c31312fc5fecc
+                    remote: git@github.com:Harry20030331/SumForU.git
+                gpu: NVIDIA GeForce RTX 4060 Laptop GPU
+                gpu_count: 1
+                gpu_nvidia:
+                    - architecture: Ada
+                      memoryTotal: "8585740288"
+                      name: NVIDIA GeForce RTX 4060 Laptop GPU
+                      uuid: GPU-bb585764-ac6f-571c-bc10-d8b571558dad
+                host: FYMLEGION
+                memory:
+                    total: "8204210176"
+                os: Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.35
+                program: -m scripts.train.sft
+                python: CPython 3.11.13
+                root: /home/yumingfeng/repo/SumForU/results/sft_personalized_model
+                startedAt: "2025-11-28T05:04:46.285026Z"
+                writerId: 0ks7ccmtgq5df0eck3yystc7erzmac3s
+        m: []
+        python_version: 3.11.13
+        t:
+            "1":
+                - 1
+                - 49
+                - 51
+            "2":
+                - 1
+                - 11
+                - 49
+                - 51
+            "3":
+                - 2
+                - 13
+                - 16
+                - 61
+            "4": 3.11.13
+            "5": 0.22.2
+            "12": 0.22.2
+            "13": linux-x86_64
+adam_beta1:
+    value: 0.9
+adam_beta2:
+    value: 0.95
+adam_eps:
+    value: 1e-08
+base_url:
+    value: null
+dataset_builder:
+    value:
+        common_config:
+            batch_size: 16
+            max_length: 4096
+            model_name_for_tokenizer: Qwen/Qwen3-4B-Instruct-2507
+            renderer_name: qwen3_instruct
+            train_on_what: ALL_ASSISTANT_MESSAGES
+        file_path: /home/yumingfeng/repo/SumForU/dataset/data/processed/sft/v1_synthesized_output.jsonl
+        shuffle_seed: 0
+        test_size: 0
+enable_trace:
+    value: false
+eval_every:
+    value: 8
+evaluator_builders:
+    value: []
+infrequent_eval_every:
+    value: 100
+infrequent_evaluator_builders:
+    value: []
+learning_rate:
+    value: 0.0002
+load_checkpoint_path:
+    value: null
+log_path:
+    value: /home/yumingfeng/repo/SumForU/results/sft_personalized_model
+lora_rank:
+    value: 32
+lr_schedule:
+    value: linear
+model_name:
+    value: Qwen/Qwen3-4B-Instruct-2507
+num_epochs:
+    value: 10
+save_every:
+    value: 20
+wandb_name:
+    value: sft_4b_v1
+wandb_project:
+    value: SumForU

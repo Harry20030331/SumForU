@@ -1,0 +1,37 @@
+{
+  "os": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.35",
+  "python": "CPython 3.11.13",
+  "startedAt": "2025-11-28T05:04:46.285026Z",
+  "program": "-m scripts.train.sft",
+  "git": {
+    "remote": "git@github.com:Harry20030331/SumForU.git",
+    "commit": "d0907eaa1981413e2c3b71cfd65c31312fc5fecc"
+  },
+  "email": "yumingf@stanford.edu",
+  "root": "/home/yumingfeng/repo/SumForU/results/sft_personalized_model",
+  "host": "FYMLEGION",
+  "executable": "/root/anaconda3/envs/hw2/bin/python",
+  "cpu_count": 12,
+  "cpu_count_logical": 24,
+  "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+  "gpu_count": 1,
+  "disk": {
+    "/": {
+      "total": "1081101176832",
+      "used": "118455402496"
+    }
+  },
+  "memory": {
+    "total": "8204210176"
+  },
+  "gpu_nvidia": [
+    {
+      "name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "memoryTotal": "8585740288",
+      "architecture": "Ada",
+      "uuid": "GPU-bb585764-ac6f-571c-bc10-d8b571558dad"
+    }
+  ],
+  "cudaVersion": "12.7",
+  "writerId": "0ks7ccmtgq5df0eck3yystc7erzmac3s"
+}

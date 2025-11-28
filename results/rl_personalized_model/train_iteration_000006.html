@@ -1,0 +1,1059 @@
+<!doctype html>
+<html lang="en">
+<head>
+<title>RL Iteration 6</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.6;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    background: var(--lt-bg, #f5f5f5);
+    color: var(--lt-text, #333);
+}
+
+.lt-root {
+    background: var(--lt-card, white);
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.lt-title {
+    margin: 0 0 0.5rem 0;
+    color: var(--lt-accent, #2563eb);
+    border-bottom: 2px solid var(--lt-border, #e5e7eb);
+    padding-bottom: 0.5rem;
+}
+
+.lt-subtitle {
+    color: var(--lt-sub, #666);
+    font-size: 0.875rem;
+    margin-bottom: 2rem;
+}
+
+.lt-section {
+    margin: 1.5rem 0;
+    padding-left: 1rem;
+    border-left: 2px solid var(--lt-border, #e5e7eb);
+}
+
+.lt-section-body {
+    margin-top: 0.5rem;
+}
+
+.lt-section h2, .lt-section h3, .lt-section h4, .lt-section h5, .lt-section h6 {
+    margin: 0.5rem 0;
+    color: var(--lt-accent, #2563eb);
+}
+
+.lt-p {
+    margin: 0.5rem 0;
+    white-space: pre-wrap;
+}
+
+.lt-details {
+    margin: 0.5rem 0;
+    border: 1px solid var(--lt-border, #e5e7eb);
+    border-radius: 4px;
+    padding: 0.5rem;
+}
+
+.lt-details summary {
+    cursor: pointer;
+    font-weight: 600;
+    user-select: none;
+}
+
+.lt-details-body {
+    margin-top: 0.5rem;
+    padding: 0.5rem;
+    background: var(--lt-bg, #f5f5f5);
+    border-radius: 4px;
+    overflow-x: auto;
+}
+
+.lt-details-body pre {
+    margin: 0;
+    font-family: var(--lt-mono, "Courier New", monospace);
+    font-size: 0.875rem;
+    white-space: pre-wrap;
+}
+
+.lt-table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1rem 0;
+    font-size: 0.875rem;
+}
+
+.lt-table th {
+    background: var(--lt-accent, #2563eb);
+    color: white;
+    padding: 0.5rem;
+    text-align: left;
+    font-weight: 600;
+}
+
+.lt-table td {
+    padding: 0.5rem;
+    border-bottom: 1px solid var(--lt-border, #e5e7eb);
+}
+
+.lt-table tr:nth-child(even) {
+    background: var(--lt-bg, #f5f5f5);
+}
+
+.lt-table-caption {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--lt-text, #333);
+}
+
+.lt-exc {
+    background: #fee;
+    border: 2px solid #c00;
+    border-radius: 4px;
+    padding: 1rem;
+    margin: 1rem 0;
+}
+
+.lt-exc summary {
+    color: #c00;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.lt-exc pre {
+    margin-top: 0.5rem;
+    font-family: var(--lt-mono, "Courier New", monospace);
+    font-size: 0.875rem;
+    overflow-x: auto;
+}
+
+.answer, .reward {
+    font-weight: 600;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    display: inline-block;
+    margin: 0.25rem 0;
+}
+
+.answer {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.reward {
+    background: #dcfce7;
+    color: #166534;
+}
+
+</style></head>
+<body class="lt-root">
+  <h1 class="lt-title">
+RL Iteration 6  </h1>
+  <div class="lt-subtitle">
+Generated 2025-11-27T21:14:37  </div>
+  <section class="lt-section">
+    <h2 class="lt-h2">
+do_group_rollout    </h2>
+    <div class="lt-section-body">
+      <section class="lt-section">
+        <h3 class="lt-h3">
+do_single_rollout        </h3>
+        <div class="lt-section-body"></div>
+      </section>
+      <section class="lt-section">
+        <h3 class="lt-h3">
+do_single_rollout        </h3>
+        <div class="lt-section-body"></div>
+      </section>
+      <section class="lt-section">
+        <h3 class="lt-h3">
+do_single_rollout        </h3>
+        <div class="lt-section-body"></div>
+      </section>
+      <section class="lt-section">
+        <h3 class="lt-h3">
+do_single_rollout        </h3>
+        <div class="lt-section-body"></div>
+      </section>
+      <section class="lt-section">
+        <h3 class="lt-h3">
+Trajectory Summary        </h3>
+        <div class="lt-section-body">
+          <div class="lt-table-caption">
+Trajectory 0          </div>
+          <table class="lt-table">
+            <thead>
+              <tr>
+                <th>
+step                </th>
+                <th>
+ob_len                </th>
+                <th>
+ac_len                </th>
+                <th>
+reward                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+0                </td>
+                <td>
+4022                </td>
+                <td>
+70                </td>
+                <td>
+0.000                </td>
+              </tr>
+              <tr>
+                <td>
+final                </td>
+                <td>
+0                </td>
+                <td>
+-                </td>
+                <td>
+0.667                </td>
+              </tr>
+              <tr>
+                <td>
+total                </td>
+                <td>
+-                </td>
+                <td>
+-                </td>
+                <td>
+0.667                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="lt-table-caption">
+Trajectory 1          </div>
+          <table class="lt-table">
+            <thead>
+              <tr>
+                <th>
+step                </th>
+                <th>
+ob_len                </th>
+                <th>
+ac_len                </th>
+                <th>
+reward                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+0                </td>
+                <td>
+4022                </td>
+                <td>
+67                </td>
+                <td>
+0.000                </td>
+              </tr>
+              <tr>
+                <td>
+final                </td>
+                <td>
+0                </td>
+                <td>
+-                </td>
+                <td>
+0.333                </td>
+              </tr>
+              <tr>
+                <td>
+total                </td>
+                <td>
+-                </td>
+                <td>
+-                </td>
+                <td>
+0.333                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="lt-table-caption">
+Trajectory 2          </div>
+          <table class="lt-table">
+            <thead>
+              <tr>
+                <th>
+step                </th>
+                <th>
+ob_len                </th>
+                <th>
+ac_len                </th>
+                <th>
+reward                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+0                </td>
+                <td>
+4022                </td>
+                <td>
+74                </td>
+                <td>
+0.000                </td>
+              </tr>
+              <tr>
+                <td>
+final                </td>
+                <td>
+0                </td>
+                <td>
+-                </td>
+                <td>
+0.000                </td>
+              </tr>
+              <tr>
+                <td>
+total                </td>
+                <td>
+-                </td>
+                <td>
+-                </td>
+                <td>
+0.000                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="lt-table-caption">
+Trajectory 3          </div>
+          <table class="lt-table">
+            <thead>
+              <tr>
+                <th>
+step                </th>
+                <th>
+ob_len                </th>
+                <th>
+ac_len                </th>
+                <th>
+reward                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+0                </td>
+                <td>
+4022                </td>
+                <td>
+102                </td>
+                <td>
+0.000                </td>
+              </tr>
+              <tr>
+                <td>
+final                </td>
+                <td>
+0                </td>
+                <td>
+-                </td>
+                <td>
+-1.000                </td>
+              </tr>
+              <tr>
+                <td>
+total                </td>
+                <td>
+-                </td>
+                <td>
+-                </td>
+                <td>
+-1.000                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </section>
+  <section class="lt-section">
+    <h2 class="lt-h2">
+do_group_rollout    </h2>
+    <div class="lt-section-body">
+      <section class="lt-section">
+        <h3 class="lt-h3">
+do_single_rollout        </h3>
+        <div class="lt-section-body"></div>
+      </section>
+      <section class="lt-section">
+        <h3 class="lt-h3">
+do_single_rollout        </h3>
+        <div class="lt-section-body"></div>
+      </section>
+      <section class="lt-section">
+        <h3 class="lt-h3">
+do_single_rollout        </h3>
+        <div class="lt-section-body"></div>
+      </section>
+      <section class="lt-section">
+        <h3 class="lt-h3">
+do_single_rollout        </h3>
+        <div class="lt-section-body"></div>
+      </section>
+      <section class="lt-section">
+        <h3 class="lt-h3">
+Trajectory Summary        </h3>
+        <div class="lt-section-body">
+          <div class="lt-table-caption">
+Trajectory 0          </div>
+          <table class="lt-table">
+            <thead>
+              <tr>
+                <th>
+step                </th>
+                <th>
+ob_len                </th>
+                <th>
+ac_len                </th>
+                <th>
+reward                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+0                </td>
+                <td>
+3282                </td>
+                <td>
+65                </td>
+                <td>
+0.000                </td>
+              </tr>
+              <tr>
+                <td>
+final                </td>
+                <td>
+0                </td>
+                <td>
+-                </td>
+                <td>
+1.000                </td>
+              </tr>
+              <tr>
+                <td>
+total                </td>
+                <td>
+-                </td>
+                <td>
+-                </td>
+                <td>
+1.000                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="lt-table-caption">
+Trajectory 1          </div>
+          <table class="lt-table">
+            <thead>
+              <tr>
+                <th>
+step                </th>
+                <th>
+ob_len                </th>
+                <th>
+ac_len                </th>
+                <th>
+reward                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+0                </td>
+                <td>
+3282                </td>
+                <td>
+79                </td>
+                <td>
+0.000                </td>
+              </tr>
+              <tr>
+                <td>
+final                </td>
+                <td>
+0                </td>
+                <td>
+-                </td>
+                <td>
+0.000                </td>
+              </tr>
+              <tr>
+                <td>
+total                </td>
+                <td>
+-                </td>
+                <td>
+-                </td>
+                <td>
+0.000                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="lt-table-caption">
+Trajectory 2          </div>
+          <table class="lt-table">
+            <thead>
+              <tr>
+                <th>
+step                </th>
+                <th>
+ob_len                </th>
+                <th>
+ac_len                </th>
+                <th>
+reward                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+0                </td>
+                <td>
+3282                </td>
+                <td>
+82                </td>
+                <td>
+0.000                </td>
+              </tr>
+              <tr>
+                <td>
+final                </td>
+                <td>
+0                </td>
+                <td>
+-                </td>
+                <td>
+-1.000                </td>
+              </tr>
+              <tr>
+                <td>
+total                </td>
+                <td>
+-                </td>
+                <td>
+-                </td>
+                <td>
+-1.000                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="lt-table-caption">
+Trajectory 3          </div>
+          <table class="lt-table">
+            <thead>
+              <tr>
+                <th>
+step                </th>
+                <th>
+ob_len                </th>
+                <th>
+ac_len                </th>
+                <th>
+reward                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+0                </td>
+                <td>
+3282                </td>
+                <td>
+80                </td>
+                <td>
+0.000                </td>
+              </tr>
+              <tr>
+                <td>
+final                </td>
+                <td>
+0                </td>
+                <td>
+-                </td>
+                <td>
+0.000                </td>
+              </tr>
+              <tr>
+                <td>
+total                </td>
+                <td>
+-                </td>
+                <td>
+-                </td>
+                <td>
+0.000                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </section>
+  <section class="lt-section">
+    <h2 class="lt-h2">
+do_group_rollout    </h2>
+    <div class="lt-section-body">
+      <section class="lt-section">
+        <h3 class="lt-h3">
+do_single_rollout        </h3>
+        <div class="lt-section-body"></div>
+      </section>
+      <section class="lt-section">
+        <h3 class="lt-h3">
+do_single_rollout        </h3>
+        <div class="lt-section-body"></div>
+      </section>
+      <section class="lt-section">
+        <h3 class="lt-h3">
+do_single_rollout        </h3>
+        <div class="lt-section-body"></div>
+      </section>
+      <section class="lt-section">
+        <h3 class="lt-h3">
+do_single_rollout        </h3>
+        <div class="lt-section-body"></div>
+      </section>
+      <section class="lt-section">
+        <h3 class="lt-h3">
+Trajectory Summary        </h3>
+        <div class="lt-section-body">
+          <div class="lt-table-caption">
+Trajectory 0          </div>
+          <table class="lt-table">
+            <thead>
+              <tr>
+                <th>
+step                </th>
+                <th>
+ob_len                </th>
+                <th>
+ac_len                </th>
+                <th>
+reward                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+0                </td>
+                <td>
+4267                </td>
+                <td>
+96                </td>
+                <td>
+0.000                </td>
+              </tr>
+              <tr>
+                <td>
+final                </td>
+                <td>
+0                </td>
+                <td>
+-                </td>
+                <td>
+-0.333                </td>
+              </tr>
+              <tr>
+                <td>
+total                </td>
+                <td>
+-                </td>
+                <td>
+-                </td>
+                <td>
+-0.333                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="lt-table-caption">
+Trajectory 1          </div>
+          <table class="lt-table">
+            <thead>
+              <tr>
+                <th>
+step                </th>
+                <th>
+ob_len                </th>
+                <th>
+ac_len                </th>
+                <th>
+reward                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+0                </td>
+                <td>
+4267                </td>
+                <td>
+90                </td>
+                <td>
+0.000                </td>
+              </tr>
+              <tr>
+                <td>
+final                </td>
+                <td>
+0                </td>
+                <td>
+-                </td>
+                <td>
+-1.000                </td>
+              </tr>
+              <tr>
+                <td>
+total                </td>
+                <td>
+-                </td>
+                <td>
+-                </td>
+                <td>
+-1.000                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="lt-table-caption">
+Trajectory 2          </div>
+          <table class="lt-table">
+            <thead>
+              <tr>
+                <th>
+step                </th>
+                <th>
+ob_len                </th>
+                <th>
+ac_len                </th>
+                <th>
+reward                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+0                </td>
+                <td>
+4267                </td>
+                <td>
+91                </td>
+                <td>
+0.000                </td>
+              </tr>
+              <tr>
+                <td>
+final                </td>
+                <td>
+0                </td>
+                <td>
+-                </td>
+                <td>
+1.000                </td>
+              </tr>
+              <tr>
+                <td>
+total                </td>
+                <td>
+-                </td>
+                <td>
+-                </td>
+                <td>
+1.000                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="lt-table-caption">
+Trajectory 3          </div>
+          <table class="lt-table">
+            <thead>
+              <tr>
+                <th>
+step                </th>
+                <th>
+ob_len                </th>
+                <th>
+ac_len                </th>
+                <th>
+reward                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+0                </td>
+                <td>
+4267                </td>
+                <td>
+93                </td>
+                <td>
+0.000                </td>
+              </tr>
+              <tr>
+                <td>
+final                </td>
+                <td>
+0                </td>
+                <td>
+-                </td>
+                <td>
+0.333                </td>
+              </tr>
+              <tr>
+                <td>
+total                </td>
+                <td>
+-                </td>
+                <td>
+-                </td>
+                <td>
+0.333                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </section>
+  <section class="lt-section">
+    <h2 class="lt-h2">
+do_group_rollout    </h2>
+    <div class="lt-section-body">
+      <section class="lt-section">
+        <h3 class="lt-h3">
+do_single_rollout        </h3>
+        <div class="lt-section-body"></div>
+      </section>
+      <section class="lt-section">
+        <h3 class="lt-h3">
+do_single_rollout        </h3>
+        <div class="lt-section-body"></div>
+      </section>
+      <section class="lt-section">
+        <h3 class="lt-h3">
+do_single_rollout        </h3>
+        <div class="lt-section-body"></div>
+      </section>
+      <section class="lt-section">
+        <h3 class="lt-h3">
+do_single_rollout        </h3>
+        <div class="lt-section-body"></div>
+      </section>
+      <section class="lt-section">
+        <h3 class="lt-h3">
+Trajectory Summary        </h3>
+        <div class="lt-section-body">
+          <div class="lt-table-caption">
+Trajectory 0          </div>
+          <table class="lt-table">
+            <thead>
+              <tr>
+                <th>
+step                </th>
+                <th>
+ob_len                </th>
+                <th>
+ac_len                </th>
+                <th>
+reward                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+0                </td>
+                <td>
+2150                </td>
+                <td>
+69                </td>
+                <td>
+0.000                </td>
+              </tr>
+              <tr>
+                <td>
+final                </td>
+                <td>
+0                </td>
+                <td>
+-                </td>
+                <td>
+0.000                </td>
+              </tr>
+              <tr>
+                <td>
+total                </td>
+                <td>
+-                </td>
+                <td>
+-                </td>
+                <td>
+0.000                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="lt-table-caption">
+Trajectory 1          </div>
+          <table class="lt-table">
+            <thead>
+              <tr>
+                <th>
+step                </th>
+                <th>
+ob_len                </th>
+                <th>
+ac_len                </th>
+                <th>
+reward                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+0                </td>
+                <td>
+2150                </td>
+                <td>
+91                </td>
+                <td>
+0.000                </td>
+              </tr>
+              <tr>
+                <td>
+final                </td>
+                <td>
+0                </td>
+                <td>
+-                </td>
+                <td>
+-1.000                </td>
+              </tr>
+              <tr>
+                <td>
+total                </td>
+                <td>
+-                </td>
+                <td>
+-                </td>
+                <td>
+-1.000                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="lt-table-caption">
+Trajectory 2          </div>
+          <table class="lt-table">
+            <thead>
+              <tr>
+                <th>
+step                </th>
+                <th>
+ob_len                </th>
+                <th>
+ac_len                </th>
+                <th>
+reward                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+0                </td>
+                <td>
+2150                </td>
+                <td>
+66                </td>
+                <td>
+0.000                </td>
+              </tr>
+              <tr>
+                <td>
+final                </td>
+                <td>
+0                </td>
+                <td>
+-                </td>
+                <td>
+1.000                </td>
+              </tr>
+              <tr>
+                <td>
+total                </td>
+                <td>
+-                </td>
+                <td>
+-                </td>
+                <td>
+1.000                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="lt-table-caption">
+Trajectory 3          </div>
+          <table class="lt-table">
+            <thead>
+              <tr>
+                <th>
+step                </th>
+                <th>
+ob_len                </th>
+                <th>
+ac_len                </th>
+                <th>
+reward                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+0                </td>
+                <td>
+2150                </td>
+                <td>
+69                </td>
+                <td>
+0.000                </td>
+              </tr>
+              <tr>
+                <td>
+final                </td>
+                <td>
+0                </td>
+                <td>
+-                </td>
+                <td>
+0.000                </td>
+              </tr>
+              <tr>
+                <td>
+total                </td>
+                <td>
+-                </td>
+                <td>
+-                </td>
+                <td>
+0.000                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </section>
+</body>
+</html>
