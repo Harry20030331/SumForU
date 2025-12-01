@@ -148,6 +148,45 @@ python -m scripts.test.test \
 
 Tweak `scripts/test/config.py` to point at different checkpoints, prompts, or prompting styles (JSON batch vs. direct single prompt, optional system prompts, sampling hyperparameters).
 
+### 5. Calculate quantitative metric for evaluation
+After obtaining model outputs with scripts/test/test.py, use the tools in scripts/eval to compute all quantitative metrics on the test set.
+
+Run the main metric script to get text, semantic, coverage, and rating metrics for all four systems (baseline / PE / SFT / RL):
+
+```bash
+cd scripts/eval
+python eval_all_metrics.py \
+  --gt-path ../../dataset/data/raw/v1_test_preprocessed.json \
+  --baseline-path ../../results/v1_test_baseline.json \
+  --pe-path ../../results/v1_test_pe.json \
+  --sft-path ../../results/v1_test_sft.json \
+  --rl-path ../../results/v1_test_rl_self.json
+```
+
+This prints:
+
+Text quality & diversity: ROUGE-1/2/L/Lsum, BLEU-4, Distinct-2/3, USR, ENTR
+
+Semantic similarity: BERTScore (P/R/F1)
+
+Persona/content coverage: RevCov (review coverage), PersCov (persona coverage)
+
+Rating alignment: MAE, MSE, Pearson/Spearman, ExactAcc, Within1Acc, MacroF1, BalancedAcc
+
+Optionally, visualize how Suitability behaves as a rating predictor with confusion matrices and per-bin bias:
+
+```bash
+python plot_score_analysis.py \
+  --gt-path ../../dataset/data/raw/v1_test_preprocessed.json \
+  --baseline-path ../../results/v1_test_baseline.json \
+  --pe-path ../../results/v1_test_pe.json \
+  --sft-path ../../results/v1_test_sft.json \
+  --rl-path ../../results/v1_test_rl_self.json \
+  --output-path confusion_and_bias_all.png
+```
+This generates a single figure stacking all methods, used in the analysis section to inspect over/under‑rating patterns across score bins.
+
+
 ## Experiment Tracking & Outputs
 
 - The [Tinker Cookbook](https://tinker-docs.thinkingmachines.ai/) for providing the training primitives used throughout the project.
