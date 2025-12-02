@@ -22,7 +22,7 @@ MODEL_NAME = "Qwen/Qwen3-4B-Instruct-2507"
 # Tinker model paths
 SFT_MODEL_PATH = "tinker://1adb47b4-105b-5a29-96fc-d04511e11a1c:train:0/sampler_weights/final"
 # RL_MODEL_PATH = "tinker://eb7b7216-772d-543c-a09b-c77d6480f7bd:train:0/sampler_weights/final"
-RL_MODEL_PATH = "tinker://c777b013-8c30-543c-a21b-535414246227:train:0/sampler_weights/final"
+RL_MODEL_PATH = "tinker://ffe1ba2e-761a-5240-b1a5-5c41101b71c8:train:0/sampler_weights/final"
 
 # Prompt settings
 PROMPT_MODE = JSON  # Options: 'direct' or 'json'

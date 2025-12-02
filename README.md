@@ -125,16 +125,18 @@ The default `max_length` is 4096 tokens to match the compact prompt/response pai
 
 ```bash
 python -m scripts.train.rl \
-   log_path=results/rl_personalized_model \
+   log_path=results/logs/rl_personalized_model \
    wandb_name=rl_personalized_model
 ```
 
 ```bash
 python -m scripts.train.rl \
-   log_path=results/rl_personalized_model_sftinit2 \
-   wandb_name=rl_personalized_model_sftinit2 \
+   log_path=results/logs/rl_personalized_model_sftinit_v2 \
+   wandb_name=rl_personalized_model_sftinit_v2 \
    learning_rate=5e-6 \
-   model_path=tinker://c777b013-8c30-543c-a21b-535414246227:train:0/weights/final
+   train_repeat=15 \
+   eval_every=10 \
+   model_path=tinker://1adb47b4-105b-5a29-96fc-d04511e11a1c:train:0/weights/final
 ```
 
 Append `test_data_path=$(realpath dataset/data/processed/rl/v1_rl_test.jsonl)` if you generate a held-out split.
@@ -146,7 +148,8 @@ Arguments map directly to the `main()` signature; run with `--help` to see all a
 Use the async tester in `scripts/test/test.py` to compare the baseline model, the SFT checkpoint, or the RL policy on shared prompts.
 
 ```bash
-python -m scripts.test.test --model_type sft 
+python -m scripts.test.test --model_type rl \
+   --target_file results/v1_test_rl.json
 ```
 
 Tweak `scripts/test/config.py` to point at different checkpoints, prompts, or prompting styles (JSON batch vs. direct single prompt, optional system prompts, sampling hyperparameters).
