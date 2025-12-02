@@ -16,7 +16,7 @@ from tinker_cookbook.supervised.types import ChatDatasetBuilderCommonConfig
 def build_config(
     model_name: str = "Qwen/Qwen3-4B-Instruct-2507",
     dataset_path: str = str((SFT_DIR / "v1_synthesized_output.jsonl").resolve()),
-    log_path: str = "/home/yumingfeng/repo/SumForU/results/sft_personalized_model",
+    log_path: str = "/home/yumingfeng/repo/SumForU/results/logs/sft_personalized_model",
     learning_rate: float = 2e-4,
     num_epochs: int = 10,
     eval_every: int = 8,
@@ -67,7 +67,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument(
         "--log-path",
-        default="/home/yumingfeng/repo/SumForU/results/sft_personalized_model",
+        default="/home/yumingfeng/repo/SumForU/results/logs/sft_personalized_model",
         help="Directory where checkpoints and logs will be written",
     )
     parser.add_argument("--learning-rate", type=float, default=2e-4)

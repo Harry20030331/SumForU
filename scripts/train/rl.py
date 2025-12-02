@@ -171,6 +171,7 @@ class PrometheusEvalDatasetBuilderFromJSONL(HFPrometheusEvalDatasetBuilder):
 
 def build_config(
     model_name: str,
+    model_path: str | None,
     reward_model_name: str,
     reward_model_path: str | None,
     train_data_path: str,
@@ -224,16 +225,18 @@ def build_config(
         evaluator_builders=[winrate_eval_builder],
         wandb_project=wandb_project,
         wandb_name=wandb_name,
+        load_checkpoint_path=model_path,
     )
 
 
 def main(
     model_name: str = "Qwen/Qwen3-4B-Instruct-2507",
+    model_path: str | None = None,
     reward_model_name: str = "Qwen/Qwen3-235B-A22B-Instruct-2507",
     reward_model_path: str | None = None,
     train_data_path: str = str((RL_DIR / "v1_rl_train.jsonl").resolve()),
     test_data_path: str = str((RL_DIR / "v1_rl_test.jsonl").resolve()),
-    log_path: str = "results/rl_personalized_model",
+    log_path: str = "results/logs/rl_personalized_model",
     max_length: int = 4096,
     learning_rate: float = 4e-5,
     batch_size: int = 16,
@@ -246,6 +249,7 @@ def main(
     load_dotenv()
     config = build_config(
         model_name=model_name,
+        model_path=model_path,
         reward_model_name=reward_model_name,
         reward_model_path=reward_model_path,
         train_data_path=train_data_path,

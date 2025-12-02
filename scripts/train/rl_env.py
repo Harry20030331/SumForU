@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
 from dataclasses import dataclass
 from typing import Sequence
 
@@ -165,6 +166,13 @@ class PrometheusEvalPairwisePreferenceGroupBuilder(EnvGroupBuilder):
         response, is_valid = self.policy_renderer.parse_response(
             trajectory.transitions[0].ac.tokens
         )
+        content = getattr(response, "content", "")
+        if isinstance(response, dict):
+            content = response.get("content", content)
+        summary_ok = bool(re.search(r"Summary:\s*\S", content))
+        suitability_ok = bool(re.search(r"Suitability:\s*(?:10|[0-9])\s*/\s*10", content))
+        if not (summary_ok and suitability_ok):
+            is_valid = False
         return [response], is_valid
 
     async def compute_group_rewards(

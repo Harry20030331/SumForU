@@ -6,3 +6,4 @@ data.json
 
 # Ignore config.py if it contains sensitive information.
 scripts/test/config.py
+results/logs/

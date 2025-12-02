@@ -6,10 +6,19 @@ Supports both single prompt (direct) and batch JSON (concurrent) inference.
 
 import argparse
 import asyncio
-import config
 import json
+
 from tinker_cookbook import renderers
-from utils import build_model, build_prompt, update_config_from_args, clear_content, TinkerSampler, print_conversation
+
+from . import config
+from .utils import (
+    TinkerSampler,
+    build_model,
+    build_prompt,
+    clear_content,
+    print_conversation,
+    update_config_from_args,
+)
 
 
 async def run_inference(model_type: str, target_file: str = None):
@@ -54,8 +63,8 @@ def main():
     parser = argparse.ArgumentParser(description="Run async model test under Tinker framework.")
     parser.add_argument("--model_type", type=str, default=config.BASELINE, choices=[config.BASELINE, config.SFT, config.RL])
     parser.add_argument("--target_file", type=str, default=None, help="Path to the target JSON file for saving results.")
-    parser.add_argument("--active_mode", type=str, choices=[config.JSON, config.DIRECT])
-    parser.add_argument("--user_input", help="Path to JSON file or single prompt text.")
+    parser.add_argument("--active_mode", type=str, default=config.JSON, choices=[config.JSON, config.DIRECT])
+    parser.add_argument("--user_input", type=str, default="dataset/data/raw/v1_test_preprocessed.json", help="Path to JSON file or single prompt text.")
 
     parser.add_argument("--temperature", type=float, help="Override temperature.")
     parser.add_argument("--max_tokens", type=int, help="Override max tokens.")
