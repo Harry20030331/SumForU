@@ -265,7 +265,7 @@ def main(
         wandb_name=wandb_name,
     )
     cli_utils.check_log_dir(config.log_path, behavior_if_exists="ask")
-    train.main(config)
+    asyncio.run(train.main(config))
 
 
 if __name__ == "__main__":
