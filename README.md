@@ -161,7 +161,7 @@ Run the main metric script to get text, semantic, coverage, and rating metrics f
 
 ```bash
 cd scripts/eval
-python eval_all_metrics.py \
+python eval_summaries_multi.py \
   --gt-path ../../dataset/data/raw/v1_test_preprocessed.json \
   --baseline-path ../../results/v1_test_baseline.json \
   --pe-path ../../results/v1_test_pe.json \
