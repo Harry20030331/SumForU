@@ -187,7 +187,7 @@ python plot_score_analysis.py \
   --baseline-path ../../results/v1_test_baseline.json \
   --pe-path ../../results/v1_test_pe.json \
   --sft-path ../../results/v1_test_sft.json \
-  --rl-path ../../results/v1_test_rl_self.json \
+  --rl-path ../../results/v1_test_rl.json \
   --output-path confusion_and_bias_all.png
 ```
 This generates a single figure stacking all methods, used in the analysis section to inspect over/under‑rating patterns across score bins.
