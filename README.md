@@ -232,45 +232,82 @@ pe          1.4700  3.0850    0.3631    0.3764     0.1000       0.5900     0.102
 sft         1.3700  2.7750    0.4222    0.4230     0.1400       0.6200     0.1266         0.2394
 rl          1.3650  3.4075    0.4193    0.4489     0.1500       0.6900     0.1476         0.2404
 
-
+JUDGE: "Qwen/Qwen3-235B-A22B-Instruct-2507"
 --- METHOD: BASELINE ---
-Overall Average Score: 0.326
-Total Wins: 293 / 900
+Overall Average Score: 0.433
+Total Wins: 390 / 900
 | Dimension       | Win Rate |
 |---------------|---------|
-| Consistency     | 0.400 |
-| Grounding       | 0.343 |
-| Persona         | 0.233 |
+| Consistency     | 0.503 |
+| Grounding       | 0.337 |
+| Persona         | 0.460 |
 
 --- METHOD: PE ---
-Overall Average Score: 0.547
-Total Wins: 492 / 900
+Overall Average Score: 0.432
+Total Wins: 389 / 900
 | Dimension       | Win Rate |
 |---------------|---------|
-| Consistency     | 0.497 |
-| Grounding       | 0.710 |
-| Persona         | 0.433 |
+| Consistency     | 0.403 |
+| Grounding       | 0.463 |
+| Persona         | 0.430 |
 
 --- METHOD: SFT ---
-Overall Average Score: 0.482
-Total Wins: 434 / 900
+Overall Average Score: 0.450
+Total Wins: 405 / 900
 | Dimension       | Win Rate |
 |---------------|---------|
-| Consistency     | 0.353 |
-| Grounding       | 0.673 |
-| Persona         | 0.420 |
+| Consistency     | 0.393 |
+| Grounding       | 0.520 |
+| Persona         | 0.437 |
 
 --- METHOD: RL ---
-Overall Average Score: 0.646
-Total Wins: 581 / 900
+Overall Average Score: 0.684
+Total Wins: 616 / 900
 | Dimension       | Win Rate |
 |---------------|---------|
-| Consistency     | 0.750 |
-| Grounding       | 0.273 |
-| Persona         | 0.913 |
+| Consistency     | 0.700 |
+| Grounding       | 0.680 |
+| Persona         | 0.673 |
+
+JUDGE: "openai/gpt-oss-120b"
+--- METHOD: BASELINE ---
+Overall Average Score: 0.433
+Total Wins: 390 / 900
+| Dimension       | Win Rate |
+|---------------|---------|
+| Consistency     | 0.503 |
+| Grounding       | 0.337 |
+| Persona         | 0.460 |
+
+--- METHOD: PE ---
+Overall Average Score: 0.432
+Total Wins: 389 / 900
+| Dimension       | Win Rate |
+|---------------|---------|
+| Consistency     | 0.403 |
+| Grounding       | 0.463 |
+| Persona         | 0.430 |
+
+--- METHOD: SFT ---
+Overall Average Score: 0.450
+Total Wins: 405 / 900
+| Dimension       | Win Rate |
+|---------------|---------|
+| Consistency     | 0.393 |
+| Grounding       | 0.520 |
+| Persona         | 0.437 |
+
+--- METHOD: RL ---
+Overall Average Score: 0.684
+Total Wins: 616 / 900
+| Dimension       | Win Rate |
+|---------------|---------|
+| Consistency     | 0.700 |
+| Grounding       | 0.680 |
+| Persona         | 0.673 |
 
 
-
+# TODO LIST
 1. SFT EPOCH lr * 2 epoch * 100    - 1-2h  15:30
 2. RL reward model rubric          - 5-6h  21:30
 3. metrics                                 22:30

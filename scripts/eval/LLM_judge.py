@@ -28,7 +28,8 @@ from scripts.test import config
 # --- 1. CONFIGURATION AND INITIAL SETUP (UNCHANGED) ---
 
 BASE_URL = None
-RM_MODEL_NAME_FOR_TOKENIZER = "Qwen/Qwen3-235B-A22B-Instruct-2507"
+RM_MODEL_NAME_FOR_TOKENIZER = "openai/gpt-oss-120b"
+# RM_MODEL_NAME_FOR_TOKENIZER = "Qwen/Qwen3-235B-A22B-Instruct-2507"
 RM_RENDERER_NAME = model_info.get_recommended_renderer_name(RM_MODEL_NAME_FOR_TOKENIZER)
 RM_MODEL_PATH = None
 RM_TEMPERATURE = 0.0
