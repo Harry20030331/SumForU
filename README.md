@@ -160,8 +160,7 @@ Run the main metric script to get text, semantic, coverage, and rating metrics f
 ```bash
 python -m scripts.eval.eval_summaries_multi \
   --gt-path dataset/data/raw/v1_test_preprocessed.json \
-  --b235b-path results/v1_test_235b.json
-   --gt-path-pred results/v1_test_reference_as_model.json
+  --b235b-path results/v1_test_235B.json \
   --baseline-path results/v1_test_baseline.json \
   --pe-path results/v1_test_pe.json \
   --sft-path results/v1_test_sft.json \
@@ -199,8 +198,31 @@ This generates a single figure stacking all methods, used in the analysis sectio
 - Everyone who contributed anonymized review data powering SumForU’s personas.
 
 
-# LLM judge
-pair comparisons(4 methods: baseline/PE/SFT/RL --> 6 pairs)
 
-reviews reflects the details
-consistency attitude
+=== Text quality, diversity, semantic similarity, and coverage ===
+
+method          r1      r2      rL   rLsum   bleu4     D-2     D-3     USR    ENTR  RevCov PersCov   RefBS-R   RevBS-P  PersBS-R
+gt          1.0000  1.0000  1.0000  1.0000  1.0000  0.8271  0.9728  1.0000  6.3820  0.6996  0.0625    1.0000    0.8428    0.8321
+235b_ref    0.1610  0.0106  0.0979  0.0977  0.0000  0.7228  0.9053  1.0000  6.2516  0.3947  0.1839    0.8406    0.8416    0.8760
+baseline    0.1509  0.0091  0.0977  0.0975  0.0000  0.7725  0.9259  1.0000  6.1601  0.4618  0.2380    0.8367    0.8509    0.8746
+pe          0.1528  0.0094  0.0957  0.0956  0.0000  0.7430  0.9140  1.0000  6.2274  0.4759  0.1883    0.8389    0.8495    0.8733
+sft         0.1486  0.0080  0.0919  0.0919  0.0000  0.7125  0.8941  1.0000  6.2076  0.4136  0.1768    0.8377    0.8424    0.8738
+rl          0.1494  0.0082  0.0867  0.0864  0.0000  0.7089  0.8986  1.0000  6.5932  0.4145  0.1485    0.8383    0.8322    0.8765
+
+BERTScore F1 per method (summary vs reference):
+  gt         BERTScore-F1 = 1.0000
+  235b_ref   BERTScore-F1 = 0.8381
+  baseline   BERTScore-F1 = 0.8390
+  pe         BERTScore-F1 = 0.8390
+  sft        BERTScore-F1 = 0.8359
+  rl         BERTScore-F1 = 0.8271
+
+=== Suitability vs reference rating (0-5 scale) ===
+
+method         MAE     MSE   Pearson  Spearman   ExactAcc   Within1Acc    MacroF1    BalancedAcc
+gt          0.0000  0.0000    1.0000    1.0000     1.0000       1.0000     1.0000         1.0000
+235b_ref    1.1150  1.8875    0.6431    0.6571     0.1700       0.7700     0.1652         0.3003
+baseline    1.6050  3.8225    0.2788    0.2294     0.0700       0.5900     0.0788         0.1737
+pe          1.4700  3.0850    0.3631    0.3764     0.1000       0.5900     0.1027         0.2097
+sft         1.3700  2.7750    0.4222    0.4230     0.1400       0.6200     0.1266         0.2394
+rl          1.3650  3.4075    0.4193    0.4489     0.1500       0.6900     0.1476         0.2404
