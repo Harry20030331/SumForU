@@ -157,12 +157,14 @@ After obtaining model outputs with scripts/test/test.py, use the tools in script
 Run the main metric script to get text, semantic, coverage, and rating metrics for all four systems (baseline / PE / SFT / RL):
 
 ```bash
-python scripts/eval/eval_summaries_multi.py \
-  --gt-path dataset/data/raw/v1_test_preprocessed.json \
-  --baseline-path results/v1_test_baseline.json \
-  --pe-path results/v1_test_pe.json \
-  --sft-path results/v1_test_235B.json \
-  --rl-path results/v1_test_rl.json
+cd scripts/eval
+python eval_summaries_multi.py \
+  --gt-path ../../dataset/data/raw/v1_test_preprocessed.json \                                                 
+  --gt-path-pred ../../results/v1_test_reference_as_model.json \                           
+  --baseline-path ../../results/v1_test_baseline.json \                                     
+  --pe-path ../../results/v1_test_pe.json \                                           
+  --sft-path ../../results/v1_test_sft.json \                                          
+  --rl-path ../../results/v1_test_rl.json 
 ```
 
 This prints:
