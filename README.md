@@ -160,6 +160,8 @@ Run the main metric script to get text, semantic, coverage, and rating metrics f
 ```bash
 python -m scripts.eval.eval_summaries_multi \
   --gt-path dataset/data/raw/v1_test_preprocessed.json \
+  --b235b-path results/v1_test_235b.json
+   --gt-path-pred results/v1_test_reference_as_model.json
   --baseline-path results/v1_test_baseline.json \
   --pe-path results/v1_test_pe.json \
   --sft-path results/v1_test_sft.json \
