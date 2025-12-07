@@ -146,6 +146,11 @@ Arguments map directly to the `main()` signature; run with `--help` to see all a
 Use the async tester in `scripts/test/test.py` to compare the baseline model, the SFT checkpoint, or the RL policy on shared prompts.
 
 ```bash
+python -m scripts.test.test --model_type sft \
+   --target_file results/v1_test_sft.json
+```
+
+```bash
 python -m scripts.test.test --model_type rl \
    --target_file results/v1_test_rl.json
 ```
@@ -226,3 +231,47 @@ baseline    1.6050  3.8225    0.2788    0.2294     0.0700       0.5900     0.078
 pe          1.4700  3.0850    0.3631    0.3764     0.1000       0.5900     0.1027         0.2097
 sft         1.3700  2.7750    0.4222    0.4230     0.1400       0.6200     0.1266         0.2394
 rl          1.3650  3.4075    0.4193    0.4489     0.1500       0.6900     0.1476         0.2404
+
+
+--- METHOD: BASELINE ---
+Overall Average Score: 0.326
+Total Wins: 293 / 900
+| Dimension       | Win Rate |
+|---------------|---------|
+| Consistency     | 0.400 |
+| Grounding       | 0.343 |
+| Persona         | 0.233 |
+
+--- METHOD: PE ---
+Overall Average Score: 0.547
+Total Wins: 492 / 900
+| Dimension       | Win Rate |
+|---------------|---------|
+| Consistency     | 0.497 |
+| Grounding       | 0.710 |
+| Persona         | 0.433 |
+
+--- METHOD: SFT ---
+Overall Average Score: 0.482
+Total Wins: 434 / 900
+| Dimension       | Win Rate |
+|---------------|---------|
+| Consistency     | 0.353 |
+| Grounding       | 0.673 |
+| Persona         | 0.420 |
+
+--- METHOD: RL ---
+Overall Average Score: 0.646
+Total Wins: 581 / 900
+| Dimension       | Win Rate |
+|---------------|---------|
+| Consistency     | 0.750 |
+| Grounding       | 0.273 |
+| Persona         | 0.913 |
+
+
+
+1. SFT EPOCH lr * 2 epoch * 100    - 1-2h  15:30
+2. RL reward model rubric          - 5-6h  21:30
+3. metrics                                 22:30
+4. change judge model
