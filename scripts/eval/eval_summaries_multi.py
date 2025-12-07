@@ -388,6 +388,12 @@ def main():
         help="GT-as-model outputs JSON (e.g., v1_test_reference_as_model.json)",
     )
     parser.add_argument(
+        "--b235b-path",
+        type=Path,
+        required=True,
+        help="235B reference model outputs JSON (e.g., v1_test_235B.json)",
+    )
+    parser.add_argument(
         "--baseline-path",
         type=Path,
         required=True,
@@ -419,8 +425,10 @@ def main():
     persona_texts = load_persona_texts(args.gt_path)
     reviews_texts = load_reviews_texts(args.gt_path)
 
+    # 顺序：gt, 235b_ref, baseline, pe, sft, rl
     methods = {
-        "gt": args.gt_path_pred,        # reference 作为模型输出
+        "gt": args.gt_path_pred,          # reference 作为模型输出
+        "235b_ref": args.b235b_path,      # 235B 模型输出
         "baseline": args.baseline_path,
         "pe": args.pe_path,
         "sft": args.sft_path,
