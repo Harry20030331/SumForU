@@ -12,7 +12,7 @@ RL = "rl"
 DEBUG_MODE = False
 
 # Common generation parameters
-TEMPERATURE = 1.0
+TEMPERATURE = 0.0
 MAX_TOKENS = 2048
 
 # Model names (from Tinker or Hugging Face)

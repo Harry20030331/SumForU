@@ -76,8 +76,8 @@ With personas prepared, regenerate the synthetic datasets used for training:
 ```bash
 # Generate SFT conversations from the default preprocessed persona set
 python -m dataset.synthesize_data --mode sft \
-   --input dataset/data/raw/v1_train_preprocessed.json \
-   --sft-output dataset/data/processed/sft/v1_synthesized_output.jsonl
+   --input dataset/data/raw/v1_test_preprocessed.json \
+   --sft-output dataset/data/processed/sft/v1_synthesized_test_output.jsonl
 
 # Generate RL prompts (train split)
 python -m dataset.synthesize_data --mode rl \
@@ -110,14 +110,11 @@ Pass overrides (for example, to tweak the shorter five-sentence prompts we train
 
 ```bash
 python -m scripts.train.sft \
-   --model-name Qwen/Qwen3-4B-Instruct-2507 \
-   --learning-rate 1e-4 \
-   --batch-size 16 \
-   --max-length 4096 \
-   --wandb-name sft_4b_v1
+   --log-path results/logs/sft_4b_v2 \
+   --wandb-name sft_4b_v2
 ```
 
-The default `max_length` is 4096 tokens to match the compact prompt/response pairs; raise it if you extend conversations. The script reads the SFT JSONL produced in the previous step, logs to wandb, and saves training artifacts under `results/sft_personalized_model/` by default.
+The default `max_length` is 65536 tokens to match the compact prompt/response pairs; raise it if you extend conversations. The script reads the SFT JSONL produced in the previous step, logs to wandb, and saves training artifacts under `results/sft_personalized_model/` by default.
 
 #### Reinforcement Learning (RLAIF)
 
@@ -160,13 +157,12 @@ After obtaining model outputs with scripts/test/test.py, use the tools in script
 Run the main metric script to get text, semantic, coverage, and rating metrics for all four systems (baseline / PE / SFT / RL):
 
 ```bash
-cd scripts/eval
-python eval_all_metrics.py \
-  --gt-path ../../dataset/data/raw/v1_test_preprocessed.json \
-  --baseline-path ../../results/v1_test_baseline.json \
-  --pe-path ../../results/v1_test_pe.json \
-  --sft-path ../../results/v1_test_sft.json \
-  --rl-path ../../results/v1_test_rl_self.json
+python scripts/eval/eval_summaries_multi.py \
+  --gt-path dataset/data/raw/v1_test_preprocessed.json \
+  --baseline-path results/v1_test_baseline.json \
+  --pe-path results/v1_test_pe.json \
+  --sft-path results/v1_test_235B.json \
+  --rl-path results/v1_test_rl.json
 ```
 
 This prints:

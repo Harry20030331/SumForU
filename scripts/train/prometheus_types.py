@@ -123,9 +123,10 @@ An instruction (might include an Input inside it), two responses to evaluate (de
 
 
 class PrometheusEvalPreferenceModelFromChatRenderer(PrometheusEvalPreferenceModel):
-    def __init__(self, convo_renderer: renderers.Renderer, sampling_client: SamplingClient):
+    def __init__(self, convo_renderer: renderers.Renderer, sampling_client: SamplingClient, temperature: float = 0.0):
         self.comparison_renderer = PrometheusEvalComparisonRendererFromChatRenderer(convo_renderer)
         self.sampling_client = sampling_client
+        self.temperature = temperature
 
     async def __call__(self, comparison: PrometheusEvalComparison) -> float:
         pm_input = self.comparison_renderer.build_generation_prompt(comparison)
@@ -133,7 +134,7 @@ class PrometheusEvalPreferenceModelFromChatRenderer(PrometheusEvalPreferenceMode
             pm_input,
             num_samples=1,
             sampling_params=types.SamplingParams(
-                temperature=0.0,
+                temperature=self.temperature,
                 max_tokens=1024,
                 stop=self.comparison_renderer.convo_renderer.get_stop_sequences(),
             ),

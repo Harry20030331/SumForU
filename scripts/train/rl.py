@@ -4,7 +4,10 @@ from dotenv import load_dotenv
 import os, sys
 current_dir = os.path.dirname(__file__)
 parent_dir = os.path.abspath(os.path.join(current_dir, os.pardir))
+parent_parent_dir = os.path.abspath(os.path.join(parent_dir, os.pardir))
 sys.path.append(parent_dir)
+sys.path.append(parent_parent_dir)
+
 
 import chz
 from datasets import Dataset, concatenate_datasets, load_dataset
@@ -17,7 +20,7 @@ from tinker_cookbook.eval.evaluators import SamplingClientEvaluator
 from tinker_cookbook.tokenizer_utils import get_tokenizer
 from tinker_cookbook.rl import train
 
-from .rl_env import (
+from scripts.train.rl_env import (
     PrometheusEvalPreferenceModelFromChatRenderer,
     PrometheusEvalComparison,
     HFPrometheusEvalDatasetBuilder,
@@ -236,15 +239,15 @@ def main(
     reward_model_path: str | None = None,
     train_data_path: str = str((RL_DIR / "v1_rl_train.jsonl").resolve()),
     test_data_path: str = str((RL_DIR / "v1_rl_test.jsonl").resolve()),
-    log_path: str = "results/logs/rl_personalized_model",
-    max_length: int = 4096,
+    log_path: str = "results/logs/rl_4b_v3",
+    max_length: int = 8192,
     learning_rate: float = 4e-5,
     batch_size: int = 16,
     group_size: int = 4,
     eval_every: int = 5,
     train_repeat: int = 5,   # repeat training data this many times, treat as an epoch multiplier
     wandb_project: str = "SumForU",
-    wandb_name: str = "rl_4b_v1",
+    wandb_name: str = "rl_4b_v3",
 ):
     load_dotenv()
     config = build_config(
