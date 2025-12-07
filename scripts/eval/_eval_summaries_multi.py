@@ -15,7 +15,6 @@ from sklearn.exceptions import UndefinedMetricWarning
 import warnings
 from transformers.utils import logging as hf_logging
 
-
 # ---------- Simple tokenizer / stopwords ----------
 
 STOPWORDS = {
@@ -24,7 +23,7 @@ STOPWORDS = {
     "is", "are", "was", "were", "be", "been", "being",
     "this", "that", "these", "those",
     "it", "its", "they", "them", "their", "we", "our", "you", "your", "i", "me",
-    #manully added
+    # manually added
     "really", "very", "quite", "just", "still", "even", "also",
 }
 
@@ -38,21 +37,37 @@ def simple_tokenize(text: str) -> List[str]:
     tokens = [t for t in text.split() if t and t not in STOPWORDS]
     return tokens
 
+# ---------- Rating / Suitability cleaning helpers ----------
+
+RATING_PREFIX_RE = re.compile(r"^\s*rating\s+([0-9]+(?:\.[0-9]+)?)\.\s*", flags=re.I)
+SUITABILITY_RE = re.compile(r"Suitability\s*:\s*[0-9]+\s*/\s*10", flags=re.I)
+
+def strip_rating_and_suitability(text: str) -> str:
+    """
+    Remove leading 'rating X.Y.' prefix and any 'Suitability: N/10' snippets,
+    then strip whitespace. Used for text metrics (ROUGE/BERTScore/coverage...).
+    """
+    text = RATING_PREFIX_RE.sub("", text)
+    text = SUITABILITY_RE.sub("", text)
+    return text.strip()
 
 # ---------- Text extraction helpers ----------
 
 def extract_summary(pred: str) -> str:
     """
     Extract the Summary part from a full model output.
+
     - Remove <|im_end|>.
     - Keep the text between 'Summary:' and 'Suitability:' if present.
+    - Then strip any rating/Suitability boilerplate.
     """
     pred = pred.replace("<|im_end|>", "").strip()
     m = re.search(r"Summary:(.*?)(Suitability:|$)", pred, flags=re.S)
     if not m:
-        return pred.strip()
-    return m.group(1).strip()
-
+        raw = pred.strip()
+    else:
+        raw = m.group(1).strip()
+    return strip_rating_and_suitability(raw)
 
 def calc_predictions(data: list) -> List[str]:
     """
@@ -69,11 +84,25 @@ def calc_references(gt_data: list) -> List[str]:
     for item in gt_data:
         ref_list = item.get("reference_output") or []
         if not ref_list:
-            refs.append("")
-        else:
-            refs.append(ref_list[0].strip())
-    return refs
+            refs_clean.append("")
+            ref_ratings.append(float("nan"))
+            continue
 
+        raw_ref = ref_list[0].strip()
+
+        m = RATING_PREFIX_RE.match(raw_ref)
+        if m:
+            try:
+                rating_val = float(m.group(1))
+            except ValueError:
+                rating_val = float("nan")
+        else:
+            rating_val = float("nan")
+        ref_ratings.append(rating_val)
+
+        refs_clean.append(strip_rating_and_suitability(raw_ref))
+
+    return refs_clean, ref_ratings
 
 # ---------- ROUGE / BLEU / BERTScore ----------
 
@@ -112,7 +141,6 @@ def calc_bertscore(preds: List[str], refs: List[str]) -> Tuple[float, float, flo
     preds = preds[:n]
     refs = refs[:n]
 
-    # Temporarily silence transformers info logs (e.g., pooler init).
     previous_level = hf_logging.get_verbosity()
     hf_logging.set_verbosity_error()
     try:
@@ -129,7 +157,6 @@ def calc_bertscore(preds: List[str], refs: List[str]) -> Tuple[float, float, flo
     r = float(np.mean(result["recall"]))
     f1 = float(np.mean(result["f1"]))
     return p, r, f1
-
 
 # ---------- Diversity metrics: Distinct / USR / ENTR ----------
 
@@ -148,10 +175,8 @@ def calc_distinct(preds: List[str], n: int) -> float:
         if len(tokens) < n:
             continue
         all_ngrams.extend(_get_ngrams(tokens, n))
-
     if not all_ngrams:
         return 0.0
-
     total = len(all_ngrams)
     unique = len(set(all_ngrams))
     return unique / total
@@ -177,10 +202,8 @@ def calc_entropy(preds: List[str]) -> float:
     tokens: List[str] = []
     for sent in preds:
         tokens.extend(sent.strip().split())
-
     if not tokens:
         return 0.0
-
     counts = Counter(tokens)
     total = sum(counts.values())
     entropy = 0.0
@@ -188,7 +211,6 @@ def calc_entropy(preds: List[str]) -> float:
         p = c / total
         entropy -= p * math.log(p + 1e-12)
     return entropy
-
 
 # ---------- Coverage metrics (review / persona) ----------
 
@@ -237,15 +259,9 @@ def calc_coverage(preds: List[str], vocab_per_sample: List[set]) -> float:
         return 0.0
     return float(np.mean(coverages))
 
-
 # ---------- Suitability vs rating helpers ----------
 
 def extract_suitability(pred: str) -> float | None:
-    """
-    Extract suitability score from a model output string.
-    Expect patterns like: 'Suitability: 8/10'.
-    Return the raw 0-10 integer as float, or None if not found.
-    """
     pred = pred.replace("<|im_end|>", "")
     m = re.search(r"Suitability\s*:\s*([0-9]+)\s*/\s*10", pred)
     if not m:
@@ -310,7 +326,6 @@ def calc_align_and_filter(pred_scores: List[float], gt_scores: List[float]) -> T
     n = min(len(pred_scores), len(gt_scores))
     pred_arr = np.array(pred_scores[:n], dtype=float)
     gt_arr = np.array(gt_scores[:n], dtype=float)
-
     mask = ~np.isnan(pred_arr) & ~np.isnan(gt_arr)
     return pred_arr[mask], gt_arr[mask]
 
@@ -393,7 +408,6 @@ def calc_classification_metrics(pred: np.ndarray, gt: np.ndarray) -> dict:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=UserWarning)
             warnings.simplefilter("ignore", category=UndefinedMetricWarning)
-
             macro_f1 = f1_score(
                 gt_label,
                 pred_label,
@@ -412,12 +426,11 @@ def calc_classification_metrics(pred: np.ndarray, gt: np.ndarray) -> dict:
 
     return {"macro_f1": float(macro_f1), "balanced_acc": float(bal_acc)}
 
-
 # ---------- Main ----------
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Evaluate text quality/diversity + semantic similarity + coverage + suitability vs rating for multiple models."
+        description="Evaluate text quality/diversity + semantic similarity + coverage + suitability vs reference rating for multiple models."
     )
     parser.add_argument(
         "--gt-path",
@@ -426,10 +439,16 @@ def main():
         help="Ground truth JSON path, e.g. dataset/data/raw/v1_test_preprocessed.json",
     )
     parser.add_argument(
+        "--gt-path-pred",
+        type=Path,
+        required=True,
+        help="GT-as-model outputs JSON (e.g., v1_test_reference_as_model.json)",
+    )
+    parser.add_argument(
         "--baseline-path",
         type=Path,
         required=True,
-        help="Baseline outputs JSON",
+        help="Baseline model outputs JSON",
     )
     parser.add_argument(
         "--pe-path",
@@ -459,6 +478,7 @@ def main():
     persona_vocab_per_sample = calc_persona_tokens(gt_data)
 
     methods = {
+        "gt": args.gt_path_pred,        # reference 作为模型输出
         "baseline": args.baseline_path,
         "pe": args.pe_path,
         "sft": args.sft_path,
@@ -522,7 +542,7 @@ def main():
         _, _, bert_f = bert_scores[name]
         print(f"  {name:<10} BERTScore-F1 = {bert_f:.4f}")
 
-    print("\n=== Suitability vs average rating (0-5 scale) ===\n")
+    print("\n=== Suitability vs reference rating (0-5 scale) ===\n")
     print(
         "{:<10} {:>7} {:>7} {:>9} {:>9} {:>10} {:>12} {:>10} {:>14}".format(
             "method", "MAE", "MSE", "Pearson", "Spearman",
@@ -551,6 +571,9 @@ def main():
                 cls_metrics["balanced_acc"],
             )
         )
+
+if __name__ == "__main__":
+    main()
 
 
 if __name__ == "__main__":
