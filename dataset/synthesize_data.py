@@ -46,9 +46,10 @@ DEFAULT_RUBRIC = (
     "Does the assistant deliver a concise 2-3 sentence summary that focuses on "
     "evidence from the reviews most relevant to the persona, and provide a "
     "1-10 suitability rating with a short justification grounded in repeated "
-    "customer feedback? Reject any response that omits a populated 'Summary:' line "
-    "or fails to state 'Suitability: <score>/10' followed by an evidence-based "
-    "justification."
+    "customer feedback? Is there consistency between Suitability score and the summary content? "
+    "Is the summary content supported by the Review set and hallucination-free? "
+    "Is the summary's organization aligned with the persona's concerns? "
+    "Does the summary offer the most actionable and relevant personalized insight for the user's decision-making?"
 )
 DEFAULT_MODEL_NAME = "Qwen/Qwen3-235B-A22B-Instruct-2507"
 REFERENCE_PROMPT_SUFFIX = (
