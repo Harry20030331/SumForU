@@ -197,8 +197,8 @@ class PrometheusEvalPairwisePreferenceGroupBuilder(EnvGroupBuilder):
         win_minus_loss_list = [0.0 for _ in range(len(response_messages))]
         matchup_count = [0 for _ in range(len(response_messages))]
         for (i, j), j_reward in safezip(comparison_indices_pairs, j_rewards):
-            win_minus_loss_list[j] -= j_reward
-            win_minus_loss_list[i] += j_reward
+            win_minus_loss_list[j] += j_reward
+            win_minus_loss_list[i] -= j_reward
             matchup_count[j] += 1
             matchup_count[i] += 1
         format_coef = 1.0

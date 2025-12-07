@@ -40,7 +40,7 @@ class LabeledPrometheusEvalComparison:
 
 class PrometheusEvalPreferenceModel:
     async def __call__(self, comparison: PrometheusEvalComparison) -> float:
-        """Return 1 when A is preferred, -1 when B is preferred, 0 for a tie."""
+        """Return -1 when A is preferred, 1 when B is preferred, 0 for a tie."""
         raise NotImplementedError
 
 

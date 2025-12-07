@@ -69,7 +69,7 @@ def extract_summary(pred: str) -> str:
         raw = m.group(1).strip()
     return strip_rating_and_suitability(raw)
 
-def load_predictions(path: Path) -> List[str]:
+def calc_predictions(path: Path) -> List[str]:
     """
     Load model outputs JSON (list[str]) and extract summaries.
     """
@@ -77,7 +77,42 @@ def load_predictions(path: Path) -> List[str]:
         data = json.load(f)
     return [extract_summary(x) for x in data]
 
-def load_references_and_ref_ratings(gt_path: Path) -> Tuple[List[str], List[float]]:
+def calc_gt_as_model_outputs(gt_data: list) -> List[str]:
+    """
+    Generate GT-as-model outputs from ground truth data.
+    """
+    outputs = []
+    for item in gt_data:
+        refs = item.get("reference_output") or []
+        if not refs:
+            outputs.append("")
+            continue
+
+        ref = refs[0].strip()
+
+        # 1) 在整段里查找 "rating X.Y"
+        m = re.search(r"rating\s+([0-9]+(?:\.[0-9]+)?)", ref, flags=re.I)
+        if m:
+            rating_str = m.group(1)
+            try:
+                rating = float(rating_str)
+            except ValueError:
+                rating = 5.0
+        else:
+            rating = 5.0
+
+        # 2) 去掉开头的 "rating X.Y." 前缀，如果有的话
+        ref_clean = re.sub(r"^\s*rating\s+[0-9]+(?:\.[0-9]+)?\.\s*", "", ref, flags=re.I)
+
+        # 3) 把 0–5 rating 映射到 0–10 suitability（按你现在评估逻辑：/2）
+        suitability_10 = max(0, min(int(round(rating * 2)), 10))
+
+        out = f"Summary: {ref_clean}\n\nSuitability: {suitability_10}/10"
+        outputs.append(out)
+
+    return outputs
+
+def calc_references_and_ref_ratings(gt_data: list) -> Tuple[List[str], List[float]]:
     """
     From ground truth JSON (list[dict]), for each sample:
 
@@ -90,13 +125,10 @@ def load_references_and_ref_ratings(gt_path: Path) -> Tuple[List[str], List[floa
       refs_clean: list[str]  -- for ROUGE/BERTScore etc.
       ref_ratings: list[float] -- for suitability vs rating metrics (NaN if missing).
     """
-    with gt_path.open("r", encoding="utf-8") as f:
-        data = json.load(f)
-
     refs_clean: List[str] = []
     ref_ratings: List[float] = []
 
-    for item in data:
+    for item in gt_data:
         ref_list = item.get("reference_output") or []
         if not ref_list:
             refs_clean.append("")
@@ -121,14 +153,14 @@ def load_references_and_ref_ratings(gt_path: Path) -> Tuple[List[str], List[floa
 
 # ---------- ROUGE / BLEU / BERTScore ----------
 
-def compute_rouge(preds: List[str], refs: List[str]) -> dict:
+def calc_rouge(preds: List[str], refs: List[str]) -> dict:
     rouge = evaluate.load("rouge")
     n = min(len(preds), len(refs))
     preds = preds[:n]
     refs = refs[:n]
     return rouge.compute(predictions=preds, references=refs, use_stemmer=True)
 
-def compute_bleu(preds: List[str], refs: List[str]) -> float:
+def calc_bleu(preds: List[str], refs: List[str]) -> float:
     bleu = evaluate.load("bleu")
     n = min(len(preds), len(refs))
     preds = preds[:n]
@@ -137,7 +169,7 @@ def compute_bleu(preds: List[str], refs: List[str]) -> float:
     result = bleu.compute(predictions=preds, references=references_wrapped)
     return float(result["bleu"])
 
-def compute_bertscore(preds: List[str], refs: List[str]) -> Tuple[float, float, float]:
+def calc_bertscore(preds: List[str], refs: List[str]) -> Tuple[float, float, float]:
     bertscore = evaluate.load("bertscore")
     n = min(len(preds), len(refs))
     preds = preds[:n]
@@ -165,7 +197,7 @@ def compute_bertscore(preds: List[str], refs: List[str]) -> Tuple[float, float, 
 def _get_ngrams(tokens: List[str], n: int) -> List[Tuple[str, ...]]:
     return [tuple(tokens[i : i + n]) for i in range(len(tokens) - n + 1)]
 
-def compute_distinct(preds: List[str], n: int) -> float:
+def calc_distinct(preds: List[str], n: int) -> float:
     all_ngrams: List[Tuple[str, ...]] = []
     for sent in preds:
         tokens = sent.strip().split()
@@ -178,14 +210,14 @@ def compute_distinct(preds: List[str], n: int) -> float:
     unique = len(set(all_ngrams))
     return unique / total
 
-def compute_usr(preds: List[str]) -> float:
+def calc_usr(preds: List[str]) -> float:
     if not preds:
         return 0.0
     total = len(preds)
     unique = len(set(s.strip() for s in preds))
     return unique / total
 
-def compute_entropy(preds: List[str]) -> float:
+def calc_entropy(preds: List[str]) -> float:
     tokens: List[str] = []
     for sent in preds:
         tokens.extend(sent.strip().split())
@@ -201,29 +233,23 @@ def compute_entropy(preds: List[str]) -> float:
 
 # ---------- Coverage metrics (review / persona) ----------
 
-def load_review_tokens(gt_path: Path) -> List[set]:
-    with gt_path.open("r", encoding="utf-8") as f:
-        data = json.load(f)
-
+def calc_review_tokens(gt_data: list) -> List[set]:
     review_vocab_per_sample: List[set] = []
-    for item in data:
+    for item in gt_data:
         reviews_text = item.get("reviews", "")
         tokens = set(simple_tokenize(reviews_text))
         review_vocab_per_sample.append(tokens)
     return review_vocab_per_sample
 
-def load_persona_tokens(gt_path: Path) -> List[set]:
-    with gt_path.open("r", encoding="utf-8") as f:
-        data = json.load(f)
-
+def calc_persona_tokens(gt_data: list) -> List[set]:
     persona_vocab_per_sample: List[set] = []
-    for item in data:
+    for item in gt_data:
         persona_text = item.get("persona", "")
         tokens = set(simple_tokenize(persona_text))
         persona_vocab_per_sample.append(tokens)
     return persona_vocab_per_sample
 
-def compute_coverage(preds: List[str], vocab_per_sample: List[set]) -> float:
+def calc_coverage(preds: List[str], vocab_per_sample: List[set]) -> float:
     n = min(len(preds), len(vocab_per_sample))
     coverages: List[float] = []
     for i in range(n):
@@ -251,10 +277,20 @@ def extract_suitability(pred: str) -> float | None:
     except ValueError:
         return None
 
-def load_suitability_scores(path: Path) -> List[float]:
+def calc_suitability_scores(path: Path) -> List[float]:
     with path.open("r", encoding="utf-8") as f:
         data = json.load(f)
 
+    scores: List[float] = []
+    for pred in data:
+        raw = extract_suitability(pred)
+        if raw is None:
+            scores.append(float("nan"))
+        else:
+            scores.append(raw / 2.0)
+    return scores
+
+def calc_suitability_scores_from_list(data: List[str]) -> List[float]:
     scores: List[float] = []
     for pred in data:
         raw = extract_suitability(pred)
@@ -271,7 +307,7 @@ def align_and_filter(pred_scores: List[float], gt_scores: List[float]) -> Tuple[
     mask = ~np.isnan(pred_arr) & ~np.isnan(gt_arr)
     return pred_arr[mask], gt_arr[mask]
 
-def compute_score_metrics(pred: np.ndarray, gt: np.ndarray) -> dict:
+def calc_score_metrics(pred: np.ndarray, gt: np.ndarray) -> dict:
     if pred.size == 0:
         return {
             "mae": math.nan,
@@ -311,7 +347,7 @@ def compute_score_metrics(pred: np.ndarray, gt: np.ndarray) -> dict:
         "within1_acc": within1_acc,
     }
 
-def compute_classification_metrics(pred: np.ndarray, gt: np.ndarray) -> dict:
+def calc_classification_metrics(pred: np.ndarray, gt: np.ndarray) -> dict:
     if pred.size == 0:
         return {"macro_f1": math.nan, "balanced_acc": math.nan}
 
@@ -358,12 +394,6 @@ def main():
         help="Ground truth JSON path, e.g. dataset/data/raw/v1_test_preprocessed.json",
     )
     parser.add_argument(
-        "--gt-path-pred",
-        type=Path,
-        required=True,
-        help="GT-as-model outputs JSON (e.g., v1_test_reference_as_model.json)",
-    )
-    parser.add_argument(
         "--baseline-path",
         type=Path,
         required=True,
@@ -389,12 +419,18 @@ def main():
     )
     args = parser.parse_args()
 
-    refs, gt_ref_ratings = load_references_and_ref_ratings(args.gt_path)
-    review_vocab_per_sample = load_review_tokens(args.gt_path)
-    persona_vocab_per_sample = load_persona_tokens(args.gt_path)
+    # Load ground truth data once at the beginning
+    with args.gt_path.open("r", encoding="utf-8") as f:
+        gt_data = json.load(f)
+    refs, gt_ref_ratings = calc_references_and_ref_ratings(gt_data)
+    review_vocab_per_sample = calc_review_tokens(gt_data)
+    persona_vocab_per_sample = calc_persona_tokens(gt_data)
+
+    # Generate GT-as-model outputs
+    gt_preds = calc_gt_as_model_outputs(gt_data)
 
     methods = {
-        "gt": args.gt_path_pred,        # reference 作为模型输出
+        "gt": gt_preds,  # list of strings
         "baseline": args.baseline_path,
         "pe": args.pe_path,
         "sft": args.sft_path,
@@ -415,22 +451,25 @@ def main():
 
     bert_scores: dict[str, Tuple[float, float, float]] = {}
 
-    for name, path in methods.items():
-        preds = load_predictions(path)
-        rouge_res = compute_rouge(preds, refs)
-        bleu4 = compute_bleu(preds, refs)
-        d2 = compute_distinct(preds, n=2)
-        d3 = compute_distinct(preds, n=3)
-        usr = compute_usr(preds)
-        entr = compute_entropy(preds)
+    for name, data in methods.items():
+        if isinstance(data, list):
+            preds = data
+        else:
+            preds = calc_predictions(data)
+        rouge_res = calc_rouge(preds, refs)
+        bleu4 = calc_bleu(preds, refs)
+        d2 = calc_distinct(preds, n=2)
+        d3 = calc_distinct(preds, n=3)
+        usr = calc_usr(preds)
+        entr = calc_entropy(preds)
         try:
-            bert_p, bert_r, bert_f = compute_bertscore(preds, refs)
+            bert_p, bert_r, bert_f = calc_bertscore(preds, refs)
         except Exception:
             bert_p, bert_r, bert_f = float("nan"), float("nan"), float("nan")
         bert_scores[name] = (bert_p, bert_r, bert_f)
 
-        rev_cov = compute_coverage(preds, review_vocab_per_sample)
-        pers_cov = compute_coverage(preds, persona_vocab_per_sample)
+        rev_cov = calc_coverage(preds, review_vocab_per_sample)
+        pers_cov = calc_coverage(preds, persona_vocab_per_sample)
 
         print(
             "{:<10} {:7.4f} {:7.4f} {:7.4f} {:7.4f} {:7.4f} {:7.4f} {:7.4f} {:7.4f} {:7.4f} {:7.4f} {:7.4f} {:7.4f} {:7.4f}".format(
@@ -464,11 +503,14 @@ def main():
         )
     )
 
-    for name, path in methods.items():
-        pred_scores_raw = load_suitability_scores(path)
+    for name, data in methods.items():
+        if isinstance(data, list):
+            pred_scores_raw = calc_suitability_scores_from_list(data)
+        else:
+            pred_scores_raw = calc_suitability_scores(data)
         pred_arr, gt_arr = align_and_filter(pred_scores_raw, gt_ref_ratings)
-        score_metrics = compute_score_metrics(pred_arr, gt_arr)
-        cls_metrics = compute_classification_metrics(pred_arr, gt_arr)
+        score_metrics = calc_score_metrics(pred_arr, gt_arr)
+        cls_metrics = calc_classification_metrics(pred_arr, gt_arr)
 
         print(
             "{:<10} {:7.4f} {:7.4f} {:9.4f} {:9.4f} {:10.4f} {:12.4f} {:10.4f} {:14.4f}".format(
@@ -483,11 +525,6 @@ def main():
                 cls_metrics["balanced_acc"],
             )
         )
-
-if __name__ == "__main__":
-    main()
-
-
 
 if __name__ == "__main__":
     main()

@@ -114,8 +114,8 @@ class WinRateVsBaseOnTestEvaluator(SamplingClientEvaluator):
         comparisons = [
             PrometheusEvalComparison(
                 prompt_conversation=prompt,
-                completion_A=[{"role": "assistant", "content": cur}],
-                completion_B=[{"role": "assistant", "content": base}],
+                completion_A=[{"role": "assistant", "content": base}],
+                completion_B=[{"role": "assistant", "content": cur}],
                 rubric="Choose the better assistant response.",
             )
             for prompt, cur, base in zip(prompts, current_responses, base_responses)
@@ -126,10 +126,7 @@ class WinRateVsBaseOnTestEvaluator(SamplingClientEvaluator):
         num_wins = 0
         num_total = len(rm_results)
         for r in rm_results:
-            if isinstance(r, dict) and "winner" in r:
-                if r["winner"] == "A":
-                    num_wins += 1
-            elif isinstance(r, (int, float)) and r > 0:
+            if isinstance(r, (int, float)) and r > 0:
                 num_wins += 1
 
         win_rate = num_wins / num_total if num_total > 0 else 0.0

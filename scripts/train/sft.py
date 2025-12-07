@@ -26,10 +26,10 @@ from tinker_cookbook.tokenizer_utils import get_tokenizer
 import asyncio
 from pathlib import Path
 from tinker_cookbook.eval.evaluators import SamplingClientEvaluator
-from scripts.eval._eval_summaries_multi import (
-    calc_references, calc_rouge, calc_bleu, calc_bertscore,
+from scripts.eval.eval_summaries_multi import (
+    calc_references_and_ref_ratings, calc_rouge, calc_bleu, calc_bertscore,
     calc_distinct, calc_usr, calc_entropy, calc_review_tokens, calc_persona_tokens, calc_coverage,
-    calc_suitability_scores, calc_avg_ratings, calc_align_and_filter, calc_score_metrics, calc_classification_metrics
+    calc_suitability_scores_from_list, align_and_filter, calc_score_metrics
 )
 
 def load_test_prompts_and_refs(json_path: str) -> tuple[list, list]:
@@ -46,7 +46,7 @@ def load_test_prompts_and_refs(json_path: str) -> tuple[list, list]:
         input_text = build_user_prompt(item["persona"], item["reviews"])
         messages_list.append(config.SYSTEM_PROMPT + "\n\n" + input_text)
 
-    ref_response = [item.get("reference_output", []) for item in data]
+    ref_response = [item.get("reference_output", [[]])[0] if item.get("reference_output") else "" for item in data]
     return messages_list, ref_response
 
 class SummarizationMetricsEvaluator(SamplingClientEvaluator):
@@ -58,10 +58,9 @@ class SummarizationMetricsEvaluator(SamplingClientEvaluator):
         self,
         test_data_path: str,
         model_name: str = "Qwen/Qwen3-4B-Instruct-2507",
-        metrics: list[str] = None,
         sample_limit: int = None,
     ):
-        self.metrics = metrics or ["rouge", "bleu", "bertscore", "distinct", "coverage", "score_metrics", "classification_metrics"]
+        self.test_data_path = test_data_path
         self.sample_limit = sample_limit
         # Load prompts and reference responses from the test set JSON file
         # import pdb; pdb.set_trace()
@@ -99,34 +98,40 @@ class SummarizationMetricsEvaluator(SamplingClientEvaluator):
 
         results = {}
 
-        # import pdb; pdb.set_trace()
-        # 3. Calculate metrics based on generated predictions
-        if "rouge" in self.metrics:
-            results.update(calc_rouge(preds, self.ref_response))
-        if "bleu" in self.metrics:
-            results["bleu4"] = calc_bleu(preds, self.ref_response)
-        if "bertscore" in self.metrics:
-            p, r, f1 = calc_bertscore(preds, self.ref_response)
-            results.update({"bertscore_p": p, "bertscore_r": r, "bertscore_f1": f1})
-        if "distinct" in self.metrics:
-            results["distinct_2"] = calc_distinct(preds, 2)
-            results["distinct_3"] = calc_distinct(preds, 3)
-            results["usr"] = calc_usr(preds)
-            results["entropy"] = calc_entropy(preds)
-        if "coverage" in self.metrics:
-            review_vocab = calc_review_tokens(self.gt_data)
-            persona_vocab = calc_persona_tokens(self.gt_data)
-            results["review_coverage"] = calc_coverage(preds, review_vocab)
-            results["persona_coverage"] = calc_coverage(preds, persona_vocab)
-        if "score_metrics" in self.metrics or "classification_metrics" in self.metrics:
-            pred_scores = calc_suitability_scores(preds)
-            gt_scores = calc_avg_ratings(self.gt_data)
-            if pred_scores is not None:
-                pred_arr, gt_arr = calc_align_and_filter(pred_scores, gt_scores)
-                if "score_metrics" in self.metrics:
-                    results.update(calc_score_metrics(pred_arr, gt_arr))
-                if "classification_metrics" in self.metrics:
-                    results.update(calc_classification_metrics(pred_arr, gt_arr))
+        # Calculate review and persona coverage
+        review_vocab = calc_review_tokens(self.gt_data)
+        persona_vocab = calc_persona_tokens(self.gt_data)
+        results["review_coverage"] = calc_coverage(preds, review_vocab)
+        results["persona_coverage"] = calc_coverage(preds, persona_vocab)
+
+        # Calculate BERTScore F1
+        p, r, f1 = calc_bertscore(preds, self.ref_response)
+        results["bertscore_f1"] = f1
+
+        # Calculate suitability scores and GT ratings for MAE and Pearson
+        pred_scores = calc_suitability_scores_from_list(preds)
+        gt_ratings = []
+        for item in self.gt_data:
+            ref_list = item.get("reference_output") or []
+            if not ref_list:
+                gt_ratings.append(float("nan"))
+                continue
+            raw_ref = ref_list[0].strip()
+            m = re.search(r"rating\s+([0-9]+(?:\.[0-9]+)?)", raw_ref, flags=re.I)
+            if m:
+                try:
+                    rating = float(m.group(1))
+                except ValueError:
+                    rating = float("nan")
+            else:
+                rating = float("nan")
+            gt_ratings.append(rating)
+
+        # Align and filter for MAE and Pearson
+        pred_arr, gt_arr = align_and_filter(pred_scores, gt_ratings)
+        score_metrics = calc_score_metrics(pred_arr, gt_arr)
+        results["mae"] = score_metrics["mae"]
+        results["pearson"] = score_metrics["pearson"]
 
         return results
     
@@ -136,7 +141,7 @@ def build_config(
     testset_path: str = "dataset/data/raw/v1_test_preprocessed.json",
     log_path: str = "results/logs/sft_personalized_model",
     learning_rate: float = 2e-4,
-    num_epochs: int = 10,
+    num_epochs: int = 50,
     eval_every: int = 8,
     max_length: int = 8192,
     batch_size: int = 16,
@@ -164,7 +169,6 @@ def build_config(
         return SummarizationMetricsEvaluator(
             test_data_path=testset_path,
             model_name=model_name,
-            metrics=["rouge", "bleu", "bertscore", "distinct", "coverage", "score_metrics", "classification_metrics"],
             sample_limit=100,  # Optional
         )
     evaluator_builders = [summarization_eval_builder]
@@ -204,7 +208,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="Directory where checkpoints and logs will be written",
     )
     parser.add_argument("--learning-rate", type=float, default=2e-4)
-    parser.add_argument("--num-epochs", type=int, default=10)
+    parser.add_argument("--num-epochs", type=int, default=50)
     parser.add_argument("--eval-every", type=int, default=8)
     parser.add_argument(
         "--max-length",

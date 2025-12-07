@@ -110,8 +110,9 @@ Pass overrides (for example, to tweak the shorter five-sentence prompts we train
 
 ```bash
 python -m scripts.train.sft \
-   --log-path results/logs/sft_4b_v2 \
-   --wandb-name sft_4b_v2
+   --log-path results/logs/sft_personalized_model_v3 \
+   --wandb-name sft_personalized_model_v3   \
+   --num-epochs 50
 ```
 
 The default `max_length` is 65536 tokens to match the compact prompt/response pairs; raise it if you extend conversations. The script reads the SFT JSONL produced in the previous step, logs to wandb, and saves training artifacts under `results/sft_personalized_model/` by default.
@@ -128,12 +129,12 @@ python -m scripts.train.rl \
 
 ```bash
 python -m scripts.train.rl \
-   log_path=results/logs/rl_personalized_model_sftinit_v2 \
-   wandb_name=rl_personalized_model_sftinit_v2 \
-   learning_rate=5e-6 \
+   log_path=results/logs/rl_personalized_model_sftinit_v4 \
+   wandb_name=rl_personalized_model_sftinit_v4 \
+   learning_rate=1e-5 \
    train_repeat=15 \
    eval_every=10 \
-   model_path=tinker://1adb47b4-105b-5a29-96fc-d04511e11a1c:train:0/weights/final
+   model_path=tinker://1d8eac56-400a-5deb-9b66-13796f2089df:train:0/weights/final
 ```
 
 Append `test_data_path=$(realpath dataset/data/processed/rl/v1_rl_test.jsonl)` if you generate a held-out split.
@@ -157,14 +158,12 @@ After obtaining model outputs with scripts/test/test.py, use the tools in script
 Run the main metric script to get text, semantic, coverage, and rating metrics for all four systems (baseline / PE / SFT / RL):
 
 ```bash
-cd scripts/eval
-python eval_summaries_multi.py \
-  --gt-path ../../dataset/data/raw/v1_test_preprocessed.json \                                                 
-  --gt-path-pred ../../results/v1_test_reference_as_model.json \                           
-  --baseline-path ../../results/v1_test_baseline.json \                                     
-  --pe-path ../../results/v1_test_pe.json \                                           
-  --sft-path ../../results/v1_test_sft.json \                                          
-  --rl-path ../../results/v1_test_rl.json 
+python -m scripts.eval.eval_summaries_multi \
+  --gt-path dataset/data/raw/v1_test_preprocessed.json \
+  --baseline-path results/v1_test_baseline.json \
+  --pe-path results/v1_test_pe.json \
+  --sft-path results/v1_test_sft.json \
+  --rl-path results/v1_test_rl.json
 ```
 
 This prints:
@@ -180,12 +179,12 @@ Rating alignment: MAE, MSE, Pearson/Spearman, ExactAcc, Within1Acc, MacroF1, Bal
 Optionally, visualize how Suitability behaves as a rating predictor with confusion matrices and per-bin bias:
 
 ```bash
-python plot_score_analysis.py \
-  --gt-path ../../dataset/data/raw/v1_test_preprocessed.json \
-  --baseline-path ../../results/v1_test_baseline.json \
-  --pe-path ../../results/v1_test_pe.json \
-  --sft-path ../../results/v1_test_sft.json \
-  --rl-path ../../results/v1_test_rl.json \
+python -m scripts.eval.plot_score_analysis \
+  --gt-path dataset/data/raw/v1_test_preprocessed.json \
+  --baseline-path results/v1_test_baseline.json \
+  --pe-path results/v1_test_pe.json \
+  --sft-path results/v1_test_sft.json \
+  --rl-path results/v1_test_rl.json \
   --output-path confusion_and_bias_all.png
 ```
 This generates a single figure stacking all methods, used in the analysis section to inspect over/under‑rating patterns across score bins.
@@ -196,3 +195,10 @@ This generates a single figure stacking all methods, used in the analysis sectio
 - The [Tinker Cookbook](https://tinker-docs.thinkingmachines.ai/) for providing the training primitives used throughout the project.
 - The [SALT-NLP/cs329x_hw2](https://github.com/SALT-NLP/cs329x_hw2) team for open-sourcing prompts and evaluation patterns that informed our baseline experiments.
 - Everyone who contributed anonymized review data powering SumForU’s personas.
+
+
+# LLM judge
+pair comparisons(4 methods: baseline/PE/SFT/RL --> 6 pairs)
+
+reviews reflects the details
+consistency attitude
