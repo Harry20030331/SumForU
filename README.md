@@ -170,7 +170,7 @@ This prints:
 
 Text quality & diversity: ROUGE-1/2/L/Lsum, BLEU-4, Distinct-2/3, USR, ENTR
 
-Semantic similarity: BERTScore (P/R/F1)
+Semantic similarity: BERTScore (Rev-P/Ref-R/Per-R/Ref-F1)
 
 Persona/content coverage: RevCov (review coverage), PersCov (persona coverage)
 
