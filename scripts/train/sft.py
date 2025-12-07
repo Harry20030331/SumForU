@@ -27,9 +27,9 @@ import asyncio
 from pathlib import Path
 from tinker_cookbook.eval.evaluators import SamplingClientEvaluator
 from scripts.eval.eval_summaries_multi import (
-    calc_references_and_ref_ratings, calc_rouge, calc_bleu, calc_bertscore,
-    calc_distinct, calc_usr, calc_entropy, calc_review_tokens, calc_persona_tokens, calc_coverage,
-    calc_suitability_scores_from_list, align_and_filter, calc_score_metrics
+    load_references_and_ref_ratings, compute_rouge, compute_bleu, compute_bertscore,
+    compute_distinct, compute_usr, compute_entropy, load_review_tokens, load_persona_tokens, compute_coverage,
+    extract_suitability, align_and_filter, compute_score_metrics, extract_summary
 )
 
 def load_test_prompts_and_refs(json_path: str) -> tuple[list, list]:
@@ -98,18 +98,40 @@ class SummarizationMetricsEvaluator(SamplingClientEvaluator):
 
         results = {}
 
+        # Extract summaries (assuming preds are full outputs)
+        preds_clean = [extract_summary(pred) for pred in preds]
+
+        # ROUGE
+        rouge_res = compute_rouge(preds_clean, self.ref_response)
+        results["rouge1"] = rouge_res.get("rouge1", 0.0)
+        results["rouge2"] = rouge_res.get("rouge2", 0.0)
+        results["rougeL"] = rouge_res.get("rougeL", 0.0)
+        results["rougeLsum"] = rouge_res.get("rougeLsum", 0.0)
+
+        # BLEU
+        results["bleu4"] = compute_bleu(preds_clean, self.ref_response)
+
+        # Diversity
+        results["distinct_2"] = compute_distinct(preds_clean, n=2)
+        results["distinct_3"] = compute_distinct(preds_clean, n=3)
+        results["usr"] = compute_usr(preds_clean)
+        results["entropy"] = compute_entropy(preds_clean)
+
         # Calculate review and persona coverage
-        review_vocab = calc_review_tokens(self.gt_data)
-        persona_vocab = calc_persona_tokens(self.gt_data)
-        results["review_coverage"] = calc_coverage(preds, review_vocab)
-        results["persona_coverage"] = calc_coverage(preds, persona_vocab)
+        review_vocab = load_review_tokens(self.gt_data)
+        persona_vocab = load_persona_tokens(self.gt_data)
+        results["review_coverage"] = compute_coverage(preds_clean, review_vocab)
+        results["persona_coverage"] = compute_coverage(preds_clean, persona_vocab)
 
         # Calculate BERTScore F1
-        p, r, f1 = calc_bertscore(preds, self.ref_response)
+        _, _, f1 = compute_bertscore(preds_clean, self.ref_response)
         results["bertscore_f1"] = f1
 
-        # Calculate suitability scores and GT ratings for MAE and Pearson
-        pred_scores = calc_suitability_scores_from_list(preds)
+        # Calculate suitability scores
+        pred_scores = [extract_suitability(pred) for pred in preds]
+        pred_scores = [raw / 2.0 if raw is not None else float("nan") for raw in pred_scores]
+
+        # GT ratings
         gt_ratings = []
         for item in self.gt_data:
             ref_list = item.get("reference_output") or []
@@ -129,7 +151,7 @@ class SummarizationMetricsEvaluator(SamplingClientEvaluator):
 
         # Align and filter for MAE and Pearson
         pred_arr, gt_arr = align_and_filter(pred_scores, gt_ratings)
-        score_metrics = calc_score_metrics(pred_arr, gt_arr)
+        score_metrics = compute_score_metrics(pred_arr, gt_arr)
         results["mae"] = score_metrics["mae"]
         results["pearson"] = score_metrics["pearson"]
 
@@ -184,7 +206,7 @@ def build_config(
             "eval_every": eval_every,
             "wandb_project": wandb_project,
             "wandb_name": wandb_name,
-            "evaluator_builders": evaluator_builders,
+        #    "evaluator_builders": evaluator_builders,
         }
     ).make()
     

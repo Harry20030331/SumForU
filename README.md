@@ -110,8 +110,8 @@ Pass overrides (for example, to tweak the shorter five-sentence prompts we train
 
 ```bash
 python -m scripts.train.sft \
-   --log-path results/logs/sft_personalized_model_v3 \
-   --wandb-name sft_personalized_model_v3   \
+   --log-path results/logs/sft_personalized_model_v4 \
+   --wandb-name sft_personalized_model_v4   \
    --num-epochs 50
 ```
 
