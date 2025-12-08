@@ -1,6 +1,8 @@
 import json
 import argparse
 import asyncio
+import tempfile
+import os
 
 import chz
 import wandb
@@ -8,7 +10,6 @@ import tinker
 import re
 from dotenv import load_dotenv
 
-import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 from scripts.test import config
@@ -159,8 +160,7 @@ class SummarizationMetricsEvaluator(SamplingClientEvaluator):
     
 def build_config(
     model_name: str = "Qwen/Qwen3-4B-Instruct-2507",
-    trainset_path: str = str((SFT_DIR / "v1_synthesized_output.jsonl").resolve()),
-    testset_path: str = "dataset/data/raw/v1_test_preprocessed.json",
+    category: str = "whole_dataset",
     log_path: str = "results/logs/sft_personalized_model",
     learning_rate: float = 2e-4,
     num_epochs: int = 50,
@@ -182,6 +182,34 @@ def build_config(
         batch_size=batch_size,
         train_on_what=TrainOnWhat.ALL_ASSISTANT_MESSAGES,
     )
+    
+    if category == "whole_dataset":
+        # Merge all train files in memory and create a temporary file
+        train_dir = Path("dataset/data/processed/sft/train")
+        train_files = list(train_dir.glob("*.jsonl"))
+        merged_lines = []
+        for f in train_files:
+            with open(f, 'r', encoding='utf-8') as file:
+                merged_lines.extend(file.readlines())
+        # Create temporary file
+        temp_train = tempfile.NamedTemporaryFile(mode='w', suffix='.jsonl', delete=False)
+        temp_train.writelines(merged_lines)
+        temp_train.close()
+        trainset_path = temp_train.name
+        print("-----------------------------------------------------------------")
+        print(f"Whole dataset synthesis completed: Merged {len(merged_lines)} lines from {len(train_files)} files into {trainset_path}")
+        print("-----------------------------------------------------------------")
+        testset_path = "dataset/data/raw/v1_test_preprocessed.json"
+        # Note: temp file will be deleted after training, but for now keep it
+    else:
+        trainset_path = f"dataset/data/processed/sft/train/{category}.jsonl"
+        testset_path = f"dataset/data/processed/sft/test/{category}.jsonl"
+        print("-----------------------------------------------------------------")
+        print(f"Using category-specific dataset: {category}")
+        print(f"Train set path: {trainset_path}")
+        print(f"Test set path: {testset_path}")
+        print("-----------------------------------------------------------------")
+    
     dataset = FromConversationFileBuilder(
         common_config=common_config, 
         file_path=trainset_path,
@@ -209,21 +237,12 @@ def build_config(
         #    "evaluator_builders": evaluator_builders,
         }
     ).make()
-    
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Train an SFT model with configurable hyperparameters")
     parser.add_argument("--model-name", default="Qwen/Qwen3-4B-Instruct-2507")
-    parser.add_argument(
-        "--trainset-path",
-        default=str((SFT_DIR / "v1_synthesized_output.jsonl").resolve()),
-        help="Path to the SFT conversation JSONL file",
-    )
-    parser.add_argument(
-        "--testset-path",
-        default="dataset/data/raw/v1_test_preprocessed.json",
-        help="Path to the SFT test set JSON file",
-    )
+    parser.add_argument("--category", default="whole_dataset",
+                        help="Category to train on: one of the 10 categories or 'whole_dataset'")
     parser.add_argument(
         "--log-path",
         default="results/logs/sft_personalized_model",
@@ -244,8 +263,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default="linear",
         help="Learning rate schedule string accepted by tinker_cookbook",
     )
-    parser.add_argument("--wandb-project", default="SumForU")
     parser.add_argument("--wandb-name", default="sft_4b_v1")
+    parser.add_argument("--wandb-project", default="SumForU")
     return parser.parse_args(argv)
 
 
@@ -254,14 +273,11 @@ def main():
     wandb.login()
     args = parse_args()
     # Ensure all important paths are absolute
-    trainset_path = str(Path(args.trainset_path).resolve())
-    testset_path = str(Path(args.testset_path).resolve())
     log_path = str(Path(args.log_path).resolve())
 
     config = build_config(
         model_name=args.model_name,
-        trainset_path=trainset_path,
-        testset_path=testset_path,
+        category=args.category,
         log_path=log_path,
         learning_rate=args.learning_rate,
         num_epochs=args.num_epochs,

@@ -34,14 +34,14 @@ from typing import Sequence
 
 from dataset import INTERIM_DIR, RL_DIR, SFT_DIR
 from scripts.test import config
-from tqdm import tqdm
+from collections import defaultdict
+from tqdm.asyncio import tqdm_asyncio
 
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
-DEFAULT_INPUT_PATH = INTERIM_DIR / "v1_preprocessed.json"
-DEFAULT_SFT_OUTPUT = SFT_DIR / "v1_synthesized_output.jsonl"
-DEFAULT_RL_OUTPUT = RL_DIR / "v1_rl_train.jsonl"
+DEFAULT_INPUT_DIR = INTERIM_DIR.parent / "preprocessed"
+DEFAULT_OUTPUT_DIR = INTERIM_DIR.parent / "processed"
 DEFAULT_RUBRIC = (
     "Does the assistant deliver a concise 2-3 sentence summary that focuses on "
     "evidence from the reviews most relevant to the persona, and provide a "
@@ -91,11 +91,16 @@ async def _synthesize_single_summary(
 ) -> dict:
     """Generate one conversation datum for SFT training."""
     system_prompt = config.SYSTEM_PROMPT.strip()
-    user_prompt = build_user_prompt(record.persona, record.reviews).strip()
+    user_prompt_base = build_user_prompt(record.persona, record.reviews).strip()
 
+    # For model generation, include reference if available
+    user_prompt_for_model = user_prompt_base
     if include_reference and record.reference_output:
         reference_block = "\n".join(reference.strip() for reference in record.reference_output if reference)
-        user_prompt += f"{REFERENCE_PROMPT_SUFFIX}{reference_block}"
+        user_prompt_for_model += f"{REFERENCE_PROMPT_SUFFIX}{reference_block}"
+
+    # For saved data, never include reference in the prompt
+    user_prompt_for_save = user_prompt_base
 
     # Lazily import heavy dependencies to keep RL-only runs lightweight.
     from scripts.test.utils import clear_content
@@ -103,7 +108,7 @@ async def _synthesize_single_summary(
 
     messages = [
         renderers.Message(role="system", content=system_prompt),
-        renderers.Message(role="user", content=user_prompt),
+        renderers.Message(role="user", content=user_prompt_for_model),
     ]
 
     response = await sampler.generate(messages)
@@ -111,7 +116,7 @@ async def _synthesize_single_summary(
 
     return {
         "messages": [
-            {"role": "user", "content": f"{system_prompt}\n\n{user_prompt}"},
+            {"role": "user", "content": f"{system_prompt}\n\n{user_prompt_for_save}"},
             {"role": "assistant", "content": summary},
         ]
     }
@@ -119,38 +124,25 @@ async def _synthesize_single_summary(
 
 async def generate_sft_dataset(
     data: Sequence[PersonaRecord],
-    output_path: Path,
     model_name: str = DEFAULT_MODEL_NAME,
-    concurrency: int = 8,
-) -> None:
-    """Generate SFT JSONL by prompting a stronger teacher model."""
+) -> list[tuple[int, dict]]:
+    """Generate SFT data by prompting a stronger teacher model."""
     if not data:
         raise ValueError("No persona records provided for SFT synthesis.")
 
     from scripts.test.utils import TinkerSampler
 
     sampler = TinkerSampler(model_name=model_name, temperature=0.7, max_tokens=512, top_p=0.9)
-    semaphore = asyncio.Semaphore(max(concurrency, 1))
-    progress = tqdm(total=len(data), desc="[SFT] Generating", unit="prompt")
 
-    async def bounded(idx: int, record: PersonaRecord) -> tuple[int, dict]:
-        async with semaphore:
-            synthesized = await _synthesize_single_summary(sampler, record)
-        progress.update(1)
+    async def _synthesize_single_summary_with_idx(idx: int, record: PersonaRecord) -> tuple[int, dict]:
+        synthesized = await _synthesize_single_summary(sampler, record)
         return idx, synthesized
 
-    try:
-        tasks = [bounded(idx, record) for idx, record in enumerate(data)]
-        collected: list[tuple[int, dict]] = await asyncio.gather(*tasks)
-    finally:
-        progress.close()
+    tasks = [_synthesize_single_summary_with_idx(idx, record) for idx, record in enumerate(data)]
+    collected: list[tuple[int, dict]] = await tqdm_asyncio.gather(*tasks, desc="[SFT] Generating")
 
     collected.sort(key=lambda pair: pair[0])
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    with output_path.open("w", encoding="utf-8") as fh:
-        for _, sample in collected:
-            fh.write(json.dumps(sample, ensure_ascii=False) + "\n")
-    print(f"[SFT] Wrote {len(collected)} examples to {output_path}")
+    return collected
 
 
 # ---------------------------------------------------------------------------
@@ -209,52 +201,100 @@ def apply_slice(data: Sequence[PersonaRecord], limit: int | None) -> Sequence[Pe
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Synthesize datasets for persona personalization")
-    parser.add_argument("--mode", choices=("sft", "rl"), default="sft",
-                        help="Select which dataset to generate in this run.")
-    parser.add_argument("--input", type=Path, default=DEFAULT_INPUT_PATH)
-    parser.add_argument("--sft-output", type=Path, default=DEFAULT_SFT_OUTPUT)
-    parser.add_argument(
-        "--rl-output",
-        type=Path,
-        default=DEFAULT_RL_OUTPUT,
-        help="Output JSONL file for RL prompts (defaults to dataset/data/processed/rl/v1_rl_train.jsonl)",
-    )
+    parser.add_argument("--mode", choices=("sft", "rl", "both"), default="both",
+                        help="Select which dataset to generate: sft, rl, or both.")
+    parser.add_argument("--input-dir", type=Path, default=DEFAULT_INPUT_DIR)
+    parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
     parser.add_argument("--rubric", type=str, default=DEFAULT_RUBRIC)
-    parser.add_argument("--max-prompts", type=int, default=None)
     parser.add_argument("--model-name", type=str, default=DEFAULT_MODEL_NAME)
-    parser.add_argument("--concurrency", type=int, default=8)
     parser.add_argument("--seed", type=int, default=42)
     return parser.parse_args(argv)
 
 
 def main(argv: Sequence[str] | None = None) -> None:
     args = parse_args(argv)
-    records = apply_slice(load_persona_records(args.input), args.max_prompts)
-    print(f"Loaded {len(records)} persona records from {args.input}")
-
-    if args.mode == "sft":
-        asyncio.run(
+    
+    # Find all preprocessed_*.json files
+    input_files = list(args.input_dir.glob("preprocessed_*.json"))
+    if not input_files:
+        print(f"No preprocessed_*.json files found in {args.input_dir}")
+        return
+    
+    print(f"Found {len(input_files)} categories to process.")
+    
+    all_train_records = []
+    category_map = {}  # idx to category
+    
+    for input_file in input_files:
+        category = input_file.stem.replace("preprocessed_", "")
+        records = load_persona_records(input_file)
+        print(f"Loaded {len(records)} records for category {category}")
+        
+        random.seed(args.seed)
+        shuffled = list(records)
+        random.shuffle(shuffled)
+        
+        train_records = shuffled[:300] if len(shuffled) >= 300 else shuffled
+        start_idx = len(all_train_records)
+        all_train_records.extend(train_records)
+        for i in range(len(train_records)):
+            category_map[start_idx + i] = category
+    
+    # Generate SFT if mode includes it
+    if args.mode in ("sft", "both"):
+        collected = asyncio.run(
             generate_sft_dataset(
-                records,
-                output_path=args.sft_output,
+                all_train_records,
                 model_name=args.model_name,
-                concurrency=args.concurrency,
             )
         )
-
-    elif args.mode == "rl":
-        output_path = args.rl_output
-        if output_path.suffix != ".jsonl":
-            raise ValueError("--rl-output must point to a .jsonl file, e.g., dataset/data/processed/rl/v1_rl_train.jsonl")
-
-        generate_rl_dataset(
-            records,
-            output_path=output_path,
-            rubric=args.rubric,
-            seed=args.seed,
-        )
-    else:
-        raise ValueError(f"Unsupported mode: {args.mode}")
+        
+        # Group by category
+        category_samples = defaultdict(list)
+        for idx, sample in collected:
+            cat = category_map[idx]
+            category_samples[cat].append(sample)
+        
+        # Write to files
+        for cat, samples in category_samples.items():
+            train_sft_path = args.output_dir / "sft" / "train" / f"{cat}.jsonl"
+            train_sft_path.parent.mkdir(parents=True, exist_ok=True)
+            with train_sft_path.open("w", encoding="utf-8") as fh:
+                for sample in samples:
+                    fh.write(json.dumps(sample, ensure_ascii=False) + "\n")
+            print(f"[SFT] Wrote {len(samples)} examples to {train_sft_path}")
+    
+    # Generate RL if mode includes it
+    if args.mode in ("rl", "both"):
+        for input_file in input_files:
+            category = input_file.stem.replace("preprocessed_", "")
+            records = load_persona_records(input_file)
+            
+            random.seed(args.seed)
+            shuffled = list(records)
+            random.shuffle(shuffled)
+            
+            train_records = shuffled[:300] if len(shuffled) >= 300 else shuffled
+            test_records = shuffled[300:400] if len(shuffled) >= 400 else []
+            
+            # Train
+            train_rl_path = args.output_dir / "rl" / "train" / f"{category}.jsonl"
+            generate_rl_dataset(
+                train_records,
+                output_path=train_rl_path,
+                rubric=args.rubric,
+                seed=args.seed,
+            )
+            
+            # Test
+            if test_records:
+                test_rl_path = args.output_dir / "rl" / "test" / f"{category}.jsonl"
+                generate_rl_dataset(
+                    test_records,
+                    output_path=test_rl_path,
+                    rubric=args.rubric,
+                    seed=args.seed,
+                )
 
 
 if __name__ == "__main__":

@@ -35,7 +35,7 @@ RM_MODEL_PATH = None
 RM_TEMPERATURE = 0.0
 
 # Define file paths (assuming they are relative to the script location)
-TEST_DATA_PATH = "dataset/data/raw/v1_test_preprocessed.json"
+TEST_DATA_PATH = "v1_test_preprocessed.json"
 OUTPUT_PATHS = {
     "baseline": "results/v1_test_baseline.json",
     "sft": "results/v1_test_sft.json",

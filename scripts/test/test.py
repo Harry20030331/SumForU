@@ -64,7 +64,7 @@ def main():
     parser.add_argument("--model_type", type=str, default=config.BASELINE, choices=[config.BASELINE, config.SFT, config.RL])
     parser.add_argument("--target_file", type=str, default=None, help="Path to the target JSON file for saving results.")
     parser.add_argument("--active_mode", type=str, default=config.JSON, choices=[config.JSON, config.DIRECT])
-    parser.add_argument("--user_input", type=str, default="dataset/data/raw/v1_test_preprocessed.json", help="Path to JSON file or single prompt text.")
+    parser.add_argument("--user_input", type=str, default="v1_test_preprocessed.json", help="Path to JSON file or single prompt text.")
 
     parser.add_argument("--temperature", type=float, help="Override temperature.")
     parser.add_argument("--max_tokens", type=int, help="Override max tokens.")

@@ -1,5 +1,6 @@
 import asyncio
 from dotenv import load_dotenv
+from pathlib import Path
 
 import os, sys
 current_dir = os.path.dirname(__file__)
@@ -19,6 +20,7 @@ from tinker_cookbook import cli_utils, model_info, renderers
 from tinker_cookbook.eval.evaluators import SamplingClientEvaluator
 from tinker_cookbook.tokenizer_utils import get_tokenizer
 from tinker_cookbook.rl import train
+import tempfile
 
 from scripts.train.rl_env import (
     PrometheusEvalPreferenceModelFromChatRenderer,
@@ -174,8 +176,7 @@ def build_config(
     model_path: str | None,
     reward_model_name: str,
     reward_model_path: str | None,
-    train_data_path: str,
-    test_data_path: str,
+    category: str,
     log_path: str,
     max_length: int,
     learning_rate: float,
@@ -186,6 +187,36 @@ def build_config(
     wandb_project: str | None = None,
     wandb_name: str | None = None,
 ) -> train.Config:
+    if category == "whole_dataset":
+        # Merge all train files in memory and create a temporary file
+        train_dir = Path("dataset/data/processed/rl/train")
+        train_files = list(train_dir.glob("*.jsonl"))
+        merged_train_lines = []
+        for f in train_files:
+            with open(f, 'r', encoding='utf-8') as file:
+                merged_train_lines.extend(file.readlines())
+        # Create temporary file for train
+        temp_train = tempfile.NamedTemporaryFile(mode='w', suffix='.jsonl', delete=False)
+        temp_train.writelines(merged_train_lines)
+        temp_train.close()
+        train_data_path = temp_train.name
+
+        # Merge all test files
+        test_dir = Path("dataset/data/processed/rl/test")
+        test_files = list(test_dir.glob("*.jsonl"))
+        merged_test_lines = []
+        for f in test_files:
+            with open(f, 'r', encoding='utf-8') as file:
+                merged_test_lines.extend(file.readlines())
+        # Create temporary file for test
+        temp_test = tempfile.NamedTemporaryFile(mode='w', suffix='.jsonl', delete=False)
+        temp_test.writelines(merged_test_lines)
+        temp_test.close()
+        test_data_path = temp_test.name
+    else:
+        train_data_path = f"dataset/data/processed/rl/train/{category}.jsonl"
+        test_data_path = f"dataset/data/processed/rl/test/{category}.jsonl"
+    
     renderer_name = model_info.get_recommended_renderer_name(model_name)
     comparison_dataset_builder = PrometheusEvalDatasetBuilderFromJSONL(
         model_name_for_tokenizer=model_name,
@@ -234,8 +265,7 @@ def main(
     model_path: str | None = None,
     reward_model_name: str = "Qwen/Qwen3-235B-A22B-Instruct-2507",
     reward_model_path: str | None = None,
-    train_data_path: str = str((RL_DIR / "v1_rl_train.jsonl").resolve()),
-    test_data_path: str = str((RL_DIR / "v1_rl_test.jsonl").resolve()),
+    category: str = "whole_dataset",
     log_path: str = "results/logs/rl_4b_v3",
     max_length: int = 8192,
     learning_rate: float = 4e-5,
@@ -252,8 +282,7 @@ def main(
         model_path=model_path,
         reward_model_name=reward_model_name,
         reward_model_path=reward_model_path,
-        train_data_path=train_data_path,
-        test_data_path=test_data_path,
+        category=category,
         log_path=log_path,
         max_length=max_length,
         learning_rate=learning_rate,

@@ -63,12 +63,10 @@ pip install datasets wandb python-dotenv tqdm rich chz numpy torch
 
 ### 2. Prepare Data
 
-Raw review corpora live under `dataset/data/raw/`. If you're starting from raw stringified review dumps, run the persona extraction step first (swap in the paths matching your split):
+Raw review corpora live under `dataset/raw/`. If you're starting from raw stringified review dumps, run the persona extraction step first (swap in the paths matching your split):
 
 ```bash
-python -m dataset.preprocess \
-   --input dataset/data/raw/v1_test_stringified.json \
-   --output dataset/data/raw/v1_test_preprocessed.json
+python dataset/generate_persona.py
 ```
 
 With personas prepared, regenerate the synthetic datasets used for training:
@@ -76,13 +74,13 @@ With personas prepared, regenerate the synthetic datasets used for training:
 ```bash
 # Generate SFT conversations from the default preprocessed persona set
 python -m dataset.synthesize_data --mode sft \
-   --input dataset/data/raw/v1_test_preprocessed.json \
-   --sft-output dataset/data/processed/sft/v1_synthesized_test_output.jsonl
+   --input dataset/raw/ \
+   --sft-output dataset/processed/
 
 # Generate RL prompts (train split)
 python -m dataset.synthesize_data --mode rl \
-   --input dataset/data/raw/v1_train_preprocessed.json \
-   --rl-output dataset/data/processed/rl/v1_rl_train.jsonl
+   --input dataset/raw/v1_train_preprocessed.json \
+   --rl-output dataset/processed/rl/v1_rl_train.jsonl
 
 # Optionally, generate RL prompts for a test/dev split
 python -m dataset.synthesize_data --mode rl \
@@ -129,12 +127,12 @@ python -m scripts.train.rl \
 
 ```bash
 python -m scripts.train.rl \
-   log_path=results/logs/rl_personalized_model_sftinit_v4 \
-   wandb_name=rl_personalized_model_sftinit_v4 \
+   log_path=results/logs/rl_personalized_model_sftinit_v5 \
+   wandb_name=rl_personalized_model_sftinit_v5 \
    learning_rate=1e-5 \
    train_repeat=15 \
    eval_every=10 \
-   model_path=tinker://1d8eac56-400a-5deb-9b66-13796f2089df:train:0/weights/final
+   model_path=tinker://7a1e1cf8-20ba-5aff-94b1-bb59b61967cc:train:0/weights/final
 ```
 
 Append `test_data_path=$(realpath dataset/data/processed/rl/v1_rl_test.jsonl)` if you generate a held-out split.
@@ -308,7 +306,87 @@ Total Wins: 616 / 900
 
 
 # TODO LIST
-1. SFT EPOCH lr * 2 epoch * 100    - 1-2h  15:30
-2. RL reward model rubric          - 5-6h  21:30
+1. SFT EPOCH lr * 2 epoch * 100    - 1-2h  15:30  √
+2. RL reward model rubric          - 5-6h  21:30  
 3. metrics                                 22:30
-4. change judge model
+4. change judge model                             √
+
+## Command Line Interfaces
+
+### generate_persona.py
+Batch preprocess stringified review data to generate personas.
+
+```bash
+python dataset/generate_persona.py --input-dir dataset/data/raw --output-dir dataset/data/preprocessed
+```
+
+Options:
+- `--input-dir`: Directory containing stringified JSON files (default: dataset/data/raw)
+- `--output-dir`: Directory to save preprocessed JSON files (default: dataset/data/preprocessed)
+
+### synthesize_data.py
+Generate SFT and RL datasets from preprocessed data.
+
+```bash
+python -m dataset.synthesize_data --mode both --input-dir dataset/data/preprocessed --output-dir dataset/data/processed
+```
+
+Options:
+- `--mode`: Select which dataset to generate: sft, rl, or both (default: both)
+- `--input-dir`: Directory containing preprocessed JSON files (default: dataset/data/preprocessed)
+- `--output-dir`: Directory to save processed datasets (default: dataset/data/processed)
+- `--rubric`: Rubric string for RL prompts (default: predefined)
+- `--model-name`: Model name for SFT data generation (default: Qwen/Qwen3-235B-A22B-Instruct-2507)
+- `--concurrency`: Number of concurrent requests for SFT (default: 5000)
+- `--seed`: Random seed (default: 42)
+
+### sft.py
+Train a supervised fine-tuning model.
+
+```bash
+python scripts/train/sft.py --category whole_dataset \
+   --log-path results/logs/sft_personalized_model_v5 \
+   --wandb-name sft_personalized_model_v5   \
+   --num-epochs 10
+```
+
+Options:
+- `--model-name`: Model to fine-tune (default: Qwen/Qwen3-4B-Instruct-2507)
+- `--category`: Category to train on: one of the 10 categories or 'whole_dataset' (default: whole_dataset)
+- `--log-path`: Directory for checkpoints and logs (default: results/logs/sft_personalized_model)
+- `--learning-rate`: Learning rate (default: 0.0002)
+- `--num-epochs`: Number of epochs (default: 50)
+- `--eval-every`: Evaluate every N steps (default: 8)
+- `--max-length`: Maximum token length (default: 4096)
+- `--batch-size`: Batch size (default: 16)
+- `--lr-schedule`: Learning rate schedule (default: linear)
+- `--wandb-name`: Wandb run name (default: sft_4b_v1)
+
+### rl.py
+Train a reinforcement learning model.
+
+```bash
+python scripts/train/rl.py category=whole_dataset    \
+   log_path=results/logs/rl_personalized_model_sftinit_v6 \
+   wandb_name=rl_personalized_model_sftinit_v6 \
+   learning_rate=1e-5 \
+   train_repeat=1 \
+   eval_every=10 \
+   model_path=tinker://7a1e1cf8-20ba-5aff-94b1-bb59b61967cc:train:0/weights/final
+```
+
+Options:
+- `--model-name`: Policy model name (default: Qwen/Qwen3-4B-Instruct-2507)
+- `--model-path`: Path to pre-trained model checkpoint (optional)
+- `--reward-model-name`: Reward model name (default: Qwen/Qwen3-235B-A22B-Instruct-2507)
+- `--reward-model-path`: Path to reward model (optional)
+- `--category`: Category to train on: one of the 10 categories or 'whole_dataset' (default: whole_dataset)
+- `--log-path`: Directory for logs (default: results/logs/rl_4b_v3)
+- `--max-length`: Maximum token length (default: 8192)
+- `--learning-rate`: Learning rate (default: 0.00004)
+- `--batch-size`: Batch size (default: 16)
+- `--group-size`: Group size for RL (default: 4)
+- `--eval-every`: Evaluate every N steps (default: 5)
+- `--train-repeat`: Repeat training data factor (default: 5)
+- `--wandb-project`: Wandb project (default: SumForU)
+- `--wandb-name`: Wandb run name (default: rl_4b_v3)

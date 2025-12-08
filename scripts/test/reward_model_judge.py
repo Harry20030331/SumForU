@@ -25,7 +25,7 @@ RM_TEMPERATURE = 0.0  # Reward model temperature
 
 # --------- Input Section (Load from test data) ---------
 # Load the first case from dataset/data/raw/v1_test_preprocessed.json
-with open("dataset/data/raw/v1_test_preprocessed.json", "r", encoding="utf-8") as f:
+with open("v1_test_preprocessed.json", "r", encoding="utf-8") as f:
     data = json.load(f)
 first_item = data[0]
 input_text = build_user_prompt(first_item["persona"], first_item["reviews"])
