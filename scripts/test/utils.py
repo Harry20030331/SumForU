@@ -81,8 +81,10 @@ def build_model(model_type: str) -> TinkerSampler:
         model_path = config.SFT_MODEL_PATH
     elif model_type == config.RL:
         model_path = config.RL_MODEL_PATH
+    elif model_type == config.PE:
+        model_path = None  # PE uses base model like baseline
     else:
-        raise ValueError("Invalid model_type. Choose from ['baseline', 'sft', 'rl'].")
+        raise ValueError("Invalid model_type. Choose from ['baseline', 'sft', 'rl', 'pe'].")
 
     return TinkerSampler(
         model_name=model_name,
@@ -107,7 +109,7 @@ def build_user_prompt(persona: str, reviews: str) -> str:
     prompt = prompt_template.replace("<persona>", persona).replace("<reviews>", reviews)
     return prompt
 
-def build_prompt():
+def build_prompt(input_data=None) -> list[list[renderers.Message]]:
     """
     Build message(s) for model input depending on the active mode.
 
@@ -123,27 +125,21 @@ def build_prompt():
             - If 'json', returns a list of message lists (one per item).
     """
     active_mode = config.PROMPT_MODE
-    prompt_input = config.PROMPT_PATH if active_mode == config.JSON else config.USER_PROMPT
 
     messages_list = []
 
     if config.USE_SYSTEM_PROMPT:
-        print("----------- Using system prompt -----------")
-        print( config.SYSTEM_PROMPT)
-        print("-------------------------------------------\n")
+        print("----------- Using system prompt -----------\n")
+        # print( config.SYSTEM_PROMPT)
+        # print("-------------------------------------------\n")
 
     if active_mode == config.JSON:
-        # check if file exists
-        if not os.path.isfile(prompt_input):
-            raise FileNotFoundError(f"JSON file not found: {prompt_input}")
-
-        with open(prompt_input, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        print(f"---------------------------------------")
-        print(f"--- Loaded {len(data)} prompts from {prompt_input} ---")
-        print(f"---------------------------------------\n")
         
-        for i, item in enumerate(data):
+        print(f"--------------------------")
+        print(f"--- Loaded {len(input_data)} prompts ---")
+        print(f"--------------------------\n")
+        
+        for i, item in enumerate(input_data):
             input_text = build_user_prompt(item["persona"], item["reviews"])
             # print(f"Loaded prompt {i + 1}: {input_text}")
             if config.USE_SYSTEM_PROMPT:
@@ -155,19 +151,9 @@ def build_prompt():
                 messages = [renderers.Message(role="user", content=input_text)]
             messages_list.append(messages)
 
-    elif active_mode == config.DIRECT:
-        input_text = prompt_input
-        if config.USE_SYSTEM_PROMPT:
-            messages = [
-                renderers.Message(role="system", content=config.SYSTEM_PROMPT),
-                renderers.Message(role="user", content=input_text),
-            ]
-        else:
-            messages = [renderers.Message(role="user", content=input_text)]
-        messages_list.append(messages)
         
     else:
-        raise ValueError("Invalid active_mode. Choose from ['json', 'direct'].")
+        raise ValueError("Invalid active_mode. Choose from ['json'].")
 
     return messages_list
 
@@ -179,16 +165,9 @@ def update_config_from_args(args):
     Args:
         args (argparse.Namespace): Parsed command-line arguments.
     """
-    # Update prompt mode before other overrides that depend on it
-    if hasattr(args, "active_mode") and args.active_mode:
-        config.PROMPT_MODE = args.active_mode
-
     # Update prompt input path/text when provided
     if hasattr(args, "user_input") and args.user_input:
-        if config.PROMPT_MODE == config.JSON:
-            config.PROMPT_PATH = args.user_input
-        else:
-            config.USER_PROMPT = args.user_input
+        config.PROMPT_PATH = args.user_input
 
     # Update temperature
     if hasattr(args, "temperature") and args.temperature is not None:

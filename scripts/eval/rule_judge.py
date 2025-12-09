@@ -203,6 +203,7 @@ def compute_bertscore(preds: List[str], refs: List[str]) -> Tuple[float, float, 
             predictions=preds,
             references=refs,
             lang="en",
+            model_type="distilbert-base-uncased",  # Use faster model
             rescale_with_baseline=False,
         )
     finally:
@@ -402,43 +403,58 @@ def main():
         "--gt-path",
         type=Path,
         required=True,
-        help="Ground truth JSON path, e.g. dataset/data/raw/v1_test_preprocessed.json",
+        help="Ground truth path: either a JSON file (e.g. dataset/data/raw/v1_test_preprocessed.json) or a directory containing .jsonl files to merge",
     )
     parser.add_argument(
         "--b235b-path",
         type=Path,
-        required=True,
+        required=False,
+        default=None,
         help="235B reference model outputs JSON (e.g., v1_test_235B.json)",
     )
     parser.add_argument(
         "--baseline-path",
         type=Path,
-        required=True,
+        required=False,
+        default=None,
         help="Baseline model outputs JSON",
     )
     parser.add_argument(
         "--pe-path",
         type=Path,
-        required=True,
+        required=False,
+        default=None,
         help="PE model outputs JSON",
     )
     parser.add_argument(
         "--sft-path",
         type=Path,
-        required=True,
+        required=False,
+        default=None,
         help="SFT model outputs JSON",
     )
     parser.add_argument(
         "--rl-path",
         type=Path,
-        required=True,
+        required=False,
+        default=None,
         help="RL model outputs JSON",
     )
     args = parser.parse_args()
 
     # Load ground truth data once
-    with args.gt_path.open("r", encoding="utf-8") as f:
-        gt_data = json.load(f)
+    if args.gt_path.is_dir():
+        gt_data = []
+        for jsonl_file in sorted(args.gt_path.glob("*.jsonl")):
+            with jsonl_file.open("r", encoding="utf-8") as f:
+                for line in f:
+                    if line.strip():
+                        gt_data.append(json.loads(line.strip()))
+        print(f"Ground truth data loaded successfully from directory. Total samples: {len(gt_data)}")
+    else:
+        with args.gt_path.open("r", encoding="utf-8") as f:
+            gt_data = json.load(f)
+        print(f"Ground truth data loaded successfully from file. Total samples: {len(gt_data)}")
 
     refs, gt_ref_ratings = load_references_and_ref_ratings(gt_data)
     review_vocab_per_sample = load_review_tokens(gt_data)
@@ -449,29 +465,25 @@ def main():
     # Generate GT-as-model outputs
     gt_preds = generate_gt_as_model_outputs(gt_data)
 
-    # Order: gt, 235b_ref, baseline, pe, sft, rl
+    # Order: gt, 235b_ref, baseline, pe, sft, rl (only include provided paths)
     methods = {
         "gt": gt_preds,  # generated from gt_data
-        "235b_ref": args.b235b_path,
-        "baseline": args.baseline_path,
-        "pe": args.pe_path,
-        "sft": args.sft_path,
-        "rl": args.rl_path,
     }
+    if args.b235b_path:
+        methods["235b_ref"] = args.b235b_path
+    if args.baseline_path:
+        methods["baseline"] = args.baseline_path
+    if args.pe_path:
+        methods["pe"] = args.pe_path
+    if args.sft_path:
+        methods["sft"] = args.sft_path
+    if args.rl_path:
+        methods["rl"] = args.rl_path
 
-    print("=== Text quality, diversity, semantic similarity, and coverage ===\n")
-    print(
-        "{:<10} {:>7} {:>7} {:>7} {:>7} {:>7} {:>7} {:>7} {:>7} {:>7} {:>7} {:>7} {:>9} {:>9} {:>9}".format(
-            "method",
-            "r1", "r2", "rL", "rLsum",
-            "bleu4",
-            "D-2", "D-3", "USR", "ENTR",
-            "RevCov", "PersCov",
-            "RefBS-R", "RevBS-P", "PersBS-R",
-        )
-    )
+
 
     bert_f1_scores: dict[str, float] = {}
+    text_quality_lines = []
 
     for name, data in methods.items():
         if isinstance(data, list):
@@ -513,38 +525,55 @@ def main():
             print(f"Error in BERTScore for {name} vs persona: {e}")
             pers_r = float("nan")
 
-        print(
-            "{:<10} {:7.4f} {:7.4f} {:7.4f} {:7.4f} {:7.4f} {:7.4f} {:7.4f} {:7.4f} {:7.4f} {:7.4f} {:7.4f} {:9.4f} {:9.4f} {:9.4f}".format(
-                name,
-                rouge_res.get("rouge1", 0.0),
-                rouge_res.get("rouge2", 0.0),
-                rouge_res.get("rougeL", 0.0),
-                rouge_res.get("rougeLsum", 0.0),
-                bleu4,
-                d2,
-                d3,
-                usr,
-                entr,
-                rev_cov,
-                pers_cov,
-                ref_r,   # RefBS-R = summary vs reference recall
-                rev_p,   # RevBS-P = summary vs reviews precision
-                pers_r,  # PersBS-R = summary vs persona recall
-            )
+        line = "{:<10} {:7.4f} {:7.4f} {:7.4f} {:7.4f} {:7.4f} {:7.4f} {:7.4f} {:7.4f} {:7.4f} {:7.4f} {:7.4f} {:9.4f} {:9.4f} {:9.4f}".format(
+            name,
+            rouge_res.get("rouge1", 0.0),
+            rouge_res.get("rouge2", 0.0),
+            rouge_res.get("rougeL", 0.0),
+            rouge_res.get("rougeLsum", 0.0),
+            bleu4,
+            d2,
+            d3,
+            usr,
+            entr,
+            rev_cov,
+            pers_cov,
+            ref_r,   # RefBS-R = summary vs reference recall
+            rev_p,   # RevBS-P = summary vs reviews precision
+            pers_r,  # PersBS-R = summary vs persona recall
         )
+        text_quality_lines.append(line)
 
-    print("\nBERTScore F1 per method (summary vs reference):")
-    for name in methods:
-        bert_f1 = bert_f1_scores.get(name, float("nan"))
-        print(f"  {name:<10} BERTScore-F1 = {bert_f1:.4f}")
+    print("=== Text quality, diversity, semantic similarity, and coverage ===")
+    print(
+        "{:<10} {:>7} {:>7} {:>7} {:>7} {:>7} {:>7} {:>7} {:>7} {:>7} {:>7} {:>7} {:>9} {:>9} {:>9}".format(
+            "method",
+            "r1", "r2", "rL", "rLsum",
+            "bleu4",
+            "D-2", "D-3", "USR", "ENTR",
+            "RevCov", "PersCov",
+            "RefBS-R", "RevBS-P", "PersBS-R",
+        )
+    )
 
-    print("\n=== Suitability vs reference rating (0-5 scale) ===\n")
+    # Print all text quality lines
+    for line in text_quality_lines:
+        print(line)
+
+    # print("\nBERTScore F1 per method (summary vs reference):")
+    # for name in methods:
+    #     bert_f1 = bert_f1_scores.get(name, float("nan"))
+    #     print(f"  {name:<10} BERTScore-F1 = {bert_f1:.4f}")
+
+    print("\n=== Suitability vs reference rating (0-5 scale) ===")
     print(
         "{:<10} {:>7} {:>7} {:>9} {:>9} {:>10} {:>12} {:>10} {:>14}".format(
             "method", "MAE", "MSE", "Pearson", "Spearman",
             "ExactAcc", "Within1Acc", "MacroF1", "BalancedAcc"
         )
     )
+
+    suitability_lines = []
 
     for name, data in methods.items():
         if isinstance(data, list):
@@ -556,19 +585,22 @@ def main():
         score_metrics = compute_score_metrics(pred_arr, gt_arr)
         cls_metrics = compute_classification_metrics(pred_arr, gt_arr)
 
-        print(
-            "{:<10} {:7.4f} {:7.4f} {:9.4f} {:9.4f} {:10.4f} {:12.4f} {:10.4f} {:14.4f}".format(
-                name,
-                score_metrics["mae"],
-                score_metrics["mse"],
-                score_metrics["pearson"],
-                score_metrics["spearman"],
-                score_metrics["exact_acc"],
-                score_metrics["within1_acc"],
-                cls_metrics["macro_f1"],
-                cls_metrics["balanced_acc"],
-            )
+        line = "{:<10} {:7.4f} {:7.4f} {:9.4f} {:9.4f} {:10.4f} {:12.4f} {:10.4f} {:14.4f}".format(
+            name,
+            score_metrics["mae"],
+            score_metrics["mse"],
+            score_metrics["pearson"],
+            score_metrics["spearman"],
+            score_metrics["exact_acc"],
+            score_metrics["within1_acc"],
+            cls_metrics["macro_f1"],
+            cls_metrics["balanced_acc"],
         )
+        suitability_lines.append(line)
+
+    # Print all suitability lines
+    for line in suitability_lines:
+        print(line)
 
 if __name__ == "__main__":
     main()

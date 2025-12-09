@@ -1,6 +1,7 @@
 import asyncio
 from dotenv import load_dotenv
 from pathlib import Path
+import random
 
 import os, sys
 current_dir = os.path.dirname(__file__)
@@ -195,6 +196,8 @@ def build_config(
         for f in train_files:
             with open(f, 'r', encoding='utf-8') as file:
                 merged_train_lines.extend(file.readlines())
+        # Shuffle the merged lines to mix categories
+        random.shuffle(merged_train_lines)
         # Create temporary file for train
         temp_train = tempfile.NamedTemporaryFile(mode='w', suffix='.jsonl', delete=False)
         temp_train.writelines(merged_train_lines)
@@ -208,6 +211,8 @@ def build_config(
         for f in test_files:
             with open(f, 'r', encoding='utf-8') as file:
                 merged_test_lines.extend(file.readlines())
+        # Shuffle the merged lines to mix categories
+        random.shuffle(merged_test_lines)
         # Create temporary file for test
         temp_test = tempfile.NamedTemporaryFile(mode='w', suffix='.jsonl', delete=False)
         temp_test.writelines(merged_test_lines)

@@ -222,47 +222,52 @@ def main(argv: Sequence[str] | None = None) -> None:
     
     print(f"Found {len(input_files)} categories to process.")
     
-    all_train_records = []
-    category_map = {}  # idx to category
-    
-    for input_file in input_files:
-        category = input_file.stem.replace("preprocessed_", "")
-        records = load_persona_records(input_file)
-        print(f"Loaded {len(records)} records for category {category}")
-        
-        random.seed(args.seed)
-        shuffled = list(records)
-        random.shuffle(shuffled)
-        
-        train_records = shuffled[:300] if len(shuffled) >= 300 else shuffled
-        start_idx = len(all_train_records)
-        all_train_records.extend(train_records)
-        for i in range(len(train_records)):
-            category_map[start_idx + i] = category
-    
     # Generate SFT if mode includes it
     if args.mode in ("sft", "both"):
-        collected = asyncio.run(
-            generate_sft_dataset(
-                all_train_records,
-                model_name=args.model_name,
+        for input_file in input_files:
+            category = input_file.stem.replace("preprocessed_", "")
+            records = load_persona_records(input_file)
+            print(f"Loaded {len(records)} records for category {category}")
+            
+            random.seed(args.seed)
+            shuffled = list(records)
+            random.shuffle(shuffled)
+            
+            train_records = shuffled[:300] if len(shuffled) >= 300 else shuffled
+            test_records = shuffled[300:400] if len(shuffled) >= 400 else []
+            
+            # Generate train
+            collected = asyncio.run(
+                generate_sft_dataset(
+                    train_records,
+                    model_name=args.model_name,
+                )
             )
-        )
-        
-        # Group by category
-        category_samples = defaultdict(list)
-        for idx, sample in collected:
-            cat = category_map[idx]
-            category_samples[cat].append(sample)
-        
-        # Write to files
-        for cat, samples in category_samples.items():
-            train_sft_path = args.output_dir / "sft" / "train" / f"{cat}.jsonl"
+            
+            train_sft_path = args.output_dir / "sft" / "train" / f"{category}.jsonl"
             train_sft_path.parent.mkdir(parents=True, exist_ok=True)
             with train_sft_path.open("w", encoding="utf-8") as fh:
-                for sample in samples:
+                for _, sample in collected:
                     fh.write(json.dumps(sample, ensure_ascii=False) + "\n")
-            print(f"[SFT] Wrote {len(samples)} examples to {train_sft_path}")
+            print(f"[SFT] Wrote {len(collected)} train examples to {train_sft_path}")
+            
+            # Generate test
+            if test_records:
+                test_sft_path = args.output_dir / "sft" / "test" / f"{category}.jsonl"
+                test_sft_path.parent.mkdir(parents=True, exist_ok=True)
+                with test_sft_path.open("w", encoding="utf-8") as fh:
+                    for record in test_records:
+                        system_prompt = config.SYSTEM_PROMPT.strip()
+                        user_prompt = build_user_prompt(record.persona, record.reviews).strip()
+                        assistant_content = "\n".join(record.reference_output) if record.reference_output else ""
+                        sample = {
+                            "messages": [
+                                {"role": "user", "content": f"{system_prompt}\n\n{user_prompt}"},
+                                {"role": "assistant", "content": assistant_content},
+                            ]
+                        }
+                        fh.write(json.dumps(sample, ensure_ascii=False) + "\n")
+                print(f"[SFT] Wrote {len(test_records)} test examples to {test_sft_path}")
     
     # Generate RL if mode includes it
     if args.mode in ("rl", "both"):

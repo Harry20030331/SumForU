@@ -2,11 +2,13 @@ import json
 import os
 import sys
 import asyncio
+import argparse
 from collections import defaultdict
 from typing import List, Dict, Any, Tuple
 from tqdm.asyncio import tqdm
 from tinker_cookbook import renderers, model_info
 from tinker import ServiceClient, types
+from pathlib import Path
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 from scripts.train.prometheus_types import (
@@ -17,31 +19,15 @@ from tinker_cookbook.tokenizer_utils import get_tokenizer
 from scripts.test.utils import build_user_prompt
 from scripts.test import config
 
-# NOTE: Dependencies from the provided template are assumed to be available
-# from tinker_cookbook import renderers, model_info
-# from tinker import ServiceClient, types
-# from scripts.train.prometheus_types import PrometheusEvalComparison, PrometheusEvalPreferenceModelFromChatRenderer
-# from tinker_cookbook.tokenizer_utils import get_tokenizer
-# from scripts.test.utils import build_user_prompt
-# from scripts.test import config
-
 # --- 1. CONFIGURATION AND INITIAL SETUP (UNCHANGED) ---
 
 BASE_URL = None
 RM_MODEL_NAME_FOR_TOKENIZER = "openai/gpt-oss-120b"
 # RM_MODEL_NAME_FOR_TOKENIZER = "Qwen/Qwen3-235B-A22B-Instruct-2507"
+# RM_MODEL_NAME_FOR_TOKENIZER = "meta-llama/Llama-3.3-70B-Instruct"
 RM_RENDERER_NAME = model_info.get_recommended_renderer_name(RM_MODEL_NAME_FOR_TOKENIZER)
 RM_MODEL_PATH = None
 RM_TEMPERATURE = 0.0
-
-# Define file paths (assuming they are relative to the script location)
-TEST_DATA_PATH = "v1_test_preprocessed.json"
-OUTPUT_PATHS = {
-    "baseline": "results/v1_test_baseline.json",
-    "sft": "results/v1_test_sft.json",
-    "pe": "results/v1_test_pe.json",
-    "rl": "results/v1_test_rl.json",
-}
 
 # --- 2. LLM JUDGE RUBRIC DEFINITIONS ---
 
@@ -83,33 +69,58 @@ JUDGE_RUBRICS = {
 
 # --- 3. DATA LOADING AND PREPARATION ---
 
-def load_all_data() -> Tuple[List[Dict], Dict[str, List[str]]]:
-    """Loads preprocessed test data and model outputs from all files."""
-    try:
-        with open(TEST_DATA_PATH, "r", encoding="utf-8") as f:
-            test_data = json.load(f)
-    except FileNotFoundError:
-        print(f"Error: Test data not found at {TEST_DATA_PATH}. Check file paths.")
-        sys.exit(1)
+def load_grouped_data(test_data_path: Path, output_paths: Dict[str, Path]) -> Tuple[Dict[str, List[Dict]], Dict[str, Dict[str, List[str]]]]:
+    """Loads and groups data by category."""
+    if test_data_path.is_dir():
+        test_data = []
+        for jsonl_file in sorted(test_data_path.glob("*.jsonl")):
+            category = jsonl_file.stem  # Use filename as category
+            with jsonl_file.open("r", encoding="utf-8") as f:
+                for line in f:
+                    if line.strip():
+                        item = json.loads(line.strip())
+                        test_data.append((category, item))
+        print(f"Test data loaded successfully from directory. Total samples: {len(test_data)}")
+    else:
+        with test_data_path.open("r", encoding="utf-8") as f:
+            test_list = json.load(f)
+        test_data = []
+        for item in test_list:
+            category = item.get("category", "unknown")
+            test_data.append((category, item))
+        print(f"Test data loaded successfully from file. Total samples: {len(test_data)}")
 
-    model_outputs = {}
-    for model_name, path in OUTPUT_PATHS.items():
-        try:
-            with open(path, "r", encoding="utf-8") as f:
-                model_outputs[model_name] = json.load(f)
-            # Ensure model output list matches test data size for correspondence
-            assert len(model_outputs[model_name]) == len(test_data)
-        except (FileNotFoundError, AssertionError):
-            print(f"Error loading or validating output for {model_name} at {path}. Exiting.")
-            sys.exit(1)
-            
-    return test_data, model_outputs
+    # Group test_data by category
+    test_data_grouped = {}
+    for category, item in test_data:
+        if category not in test_data_grouped:
+            test_data_grouped[category] = []
+        test_data_grouped[category].append(item)
+
+    # Load model outputs and group by category
+    model_outputs_grouped = {}
+    for model_name, path in output_paths.items():
+        if path:
+            try:
+                with open(path, "r", encoding="utf-8") as f:
+                    outputs = json.load(f)
+                # Assume outputs are in the same order as test_data
+                idx = 0
+                for category, items in test_data_grouped.items():
+                    if category not in model_outputs_grouped:
+                        model_outputs_grouped[category] = {}
+                    model_outputs_grouped[category][model_name] = outputs[idx:idx + len(items)]
+                    idx += len(items)
+                assert idx == len(outputs)
+            except (FileNotFoundError, AssertionError):
+                print(f"Error loading or validating output for {model_name} at {path}. Skipping.")
+                continue
+    return test_data_grouped, model_outputs_grouped
 
 def extract_prompts_for_item(item: Dict) -> Tuple[str, List[Dict], str]:
     """Builds the user prompt and conversation structure for a single item."""
-    # Assuming config.SYSTEM_PROMPT and build_user_prompt are available from imports
     input_text = build_user_prompt(item["persona"], item["reviews"])
-    prompt_conversation = [{"role": "user", "content": input_text}]  # List of dicts
+    prompt_conversation = [{"role": "user", "content": input_text}]
     reference = "\n".join(item.get("reference_output", [])) or None
     return input_text, prompt_conversation, reference
 
@@ -135,15 +146,13 @@ async def evaluate_pair_dimension(
         rubric=rubric,
         reference=reference,
     )
-    # The reward model returns a score: < 0 if A is better, > 0 if B is better (based on the if "A" return -1, "B" return 1).
     score = await reward_model(comparison)
-    # Convert to 1 if A better, 0 if B better.
     return 1 if score < 0 else 0
 
-async def run_full_evaluation(test_data: List[Dict], model_outputs: Dict[str, List[str]]):
-    """Iterates through all data points and all method pairs, running the three-dimensional evaluation."""
+async def run_full_evaluation_for_category(test_data: List[Dict], model_outputs: Dict[str, List[str]], methods: List[str], category: str):
+    """Iterates through all data points and all method pairs, running the three-dimensional evaluation for a category."""
     
-    # Initialize Tinker components (as per the provided template)
+    # Initialize Tinker components
     tokenizer = get_tokenizer(RM_MODEL_NAME_FOR_TOKENIZER)
     renderer = renderers.get_renderer(RM_RENDERER_NAME, tokenizer=tokenizer)
     service_client = ServiceClient(base_url=BASE_URL)
@@ -153,29 +162,21 @@ async def run_full_evaluation(test_data: List[Dict], model_outputs: Dict[str, Li
         renderer, preference_sampling_client, temperature=RM_TEMPERATURE
     )
 
-    methods = ["baseline", "pe", "sft", "rl"]
     method_pairs = []
-    
-    # Define all unique pairs (e.g., baseline vs pe, pe vs sft, etc.)
     for i in range(len(methods)):
         for j in range(i + 1, len(methods)):
             method_pairs.append((methods[i], methods[j]))
     
-    # Store aggregated results per method: {method: {'Consistency': total_score, 'Grounding': total_score, ...}}
     method_scores = defaultdict(lambda: defaultdict(int))
     
-    print(f"Starting LLM Judge evaluation across {len(test_data)} test items and {len(method_pairs)} pairs...")
+    print(f"Starting LLM Judge evaluation for category {category} across {len(test_data)} test items and {len(method_pairs)} pairs...")
     
-    # Collect all tasks across all items
     all_tasks = []
-    global_task_map = {}  # key: global_index, value: (item_idx, m_A, m_B, dim)
-    task_to_global_index = {}  # key: task, value: global_index
+    global_task_map = {}
     
     for idx, item in enumerate(test_data):
-        # Extract common context (prompt, reference)
         _, conversation, reference = extract_prompts_for_item(item)
         
-        # Prepare model responses
         responses = {
             m: get_response_message(model_outputs[m][idx])
             for m in methods
@@ -194,26 +195,19 @@ async def run_full_evaluation(test_data: List[Dict], model_outputs: Dict[str, Li
                 task = asyncio.create_task(coro)
                 global_index = len(all_tasks)
                 all_tasks.append(task)
-                task_to_global_index[task] = global_index
                 global_task_map[global_index] = (idx, m_A, m_B, dim)
     
-    # Run all comparisons in parallel with real-time progress
-    results = await tqdm.gather(*all_tasks, desc="Processing all comparisons")
+    results = await tqdm.gather(*all_tasks, desc=f"Processing {category}")
     
-    # Aggregate results per method
     for global_index, score in enumerate(results):
         item_idx, m_A, m_B, dim = global_task_map[global_index]
-        # Score: 1 if A better, 0 if B better.
         method_scores[m_A][dim] += score
         method_scores[m_B][dim] += (1 - score)
     
-    # --- 5. FINAL RESULT CALCULATION AND REPORTING ---
-
-    # Print Report
-    print("\n" + "="*80)
-    print("LLM JUDGE (Qwen3-235B) THREE-DIMENSIONAL COMPARISON REPORT")
+    print(f"\n" + "="*80)
+    print(f"LLM JUDGE (Qwen3-235B) THREE-DIMENSIONAL COMPARISON REPORT FOR {category.upper()}")
     print(f"Total Test Items: {len(test_data)}")
-    print(f"Scoring: Each method's score = (wins against other three) / {(len(methods) - 1) * len(test_data)}. Overall = average of three dimensions.")
+    print(f"Scoring: Each method's score = (wins against other methods) / {(len(methods) - 1) * len(test_data)}. Overall = average of three dimensions.")
     print("="*80)
     
     for method in methods:
@@ -230,13 +224,92 @@ async def run_full_evaluation(test_data: List[Dict], model_outputs: Dict[str, Li
             score = dim_scores[dim]
             win_rate = score / ((len(methods) - 1) * len(test_data))
             print(f"| {dim:<15} | {win_rate:.3f} |")
+    
+    return method_scores
 
+async def run_full_evaluation(test_data_grouped: Dict[str, List[Dict]], model_outputs_grouped: Dict[str, Dict[str, List[str]]], methods: List[str]):
+    results = {}
+    for category, test_data in test_data_grouped.items():
+        model_outputs = model_outputs_grouped.get(category, {})
+        category_methods = [m for m in methods if m in model_outputs]
+        if not category_methods:
+            continue
+        method_scores = await run_full_evaluation_for_category(test_data, model_outputs, category_methods, category)
+        results[category] = method_scores
+    
+    # Compute overall
+    print("\nComputing overall...")
+    all_test_data = []
+    all_model_outputs = {}
+    for category in test_data_grouped:
+        all_test_data.extend(test_data_grouped[category])
+        for model_name in model_outputs_grouped.get(category, {}):
+            if model_name not in all_model_outputs:
+                all_model_outputs[model_name] = []
+            all_model_outputs[model_name].extend(model_outputs_grouped[category][model_name])
+    
+    overall_methods = [m for m in methods if m in all_model_outputs]
+    if overall_methods:
+        overall_scores = await run_full_evaluation_for_category(all_test_data, all_model_outputs, overall_methods, "overall")
+        results["overall"] = overall_scores
+    
+    # Write to JSON
+    with open("llm_metric_category.json", "w", encoding="utf-8") as f:
+        json.dump(results, f, indent=2)
+    print("Results written to llm_metric_category.json")
 
 if __name__ == "__main__":
-    # Add project root to path if not already done (copied from user template)
     sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
     
-    # NOTE: Execution requires the user environment to have the 'tinker', 'tinker_cookbook', 
-    # and 'scripts.train.prometheus_types' dependencies installed and configured to access the 235B model.
-    test_data, model_outputs = load_all_data()
-    asyncio.run(run_full_evaluation(test_data, model_outputs))
+    parser = argparse.ArgumentParser(description="Run LLM Judge evaluation for multiple models, grouped by category.")
+    parser.add_argument(
+        "--test-data-path",
+        type=Path,
+        required=True,
+        help="Path to test data: either a JSON file or a directory containing .jsonl files to merge",
+    )
+    parser.add_argument(
+        "--baseline-path",
+        type=Path,
+        required=False,
+        default=None,
+        help="Path to baseline model outputs JSON",
+    )
+    parser.add_argument(
+        "--sft-path",
+        type=Path,
+        required=False,
+        default=None,
+        help="Path to SFT model outputs JSON",
+    )
+    parser.add_argument(
+        "--pe-path",
+        type=Path,
+        required=False,
+        default=None,
+        help="Path to PE model outputs JSON",
+    )
+    parser.add_argument(
+        "--rl-path",
+        type=Path,
+        required=False,
+        default=None,
+        help="Path to RL model outputs JSON",
+    )
+    args = parser.parse_args()
+
+    output_paths = {
+        "baseline": args.baseline_path,
+        "sft": args.sft_path,
+        "pe": args.pe_path,
+        "rl": args.rl_path,
+    }
+    
+    test_data_grouped, model_outputs_grouped = load_grouped_data(args.test_data_path, output_paths)
+    
+    methods = [m for m in ["baseline", "pe", "sft", "rl"] if output_paths[m] is not None]
+    if not methods:
+        print("Error: At least one model output path must be provided.")
+        sys.exit(1)
+    
+    asyncio.run(run_full_evaluation(test_data_grouped, model_outputs_grouped, methods))

@@ -2,11 +2,11 @@
 """
 Configuration file storing model paths, sampling parameters, and prompt settings.
 """
-DIRECT = "direct"
 JSON = "json"
 BASELINE = "baseline"
 SFT = "sft"
 RL = "rl"
+PE = "pe"
 
 # debug mode
 DEBUG_MODE = False
@@ -19,13 +19,18 @@ MAX_TOKENS = 2048
 MODEL_NAME = "Qwen/Qwen3-4B-Instruct-2507"
 # MODEL_NAME = "Qwen/Qwen3-30B-A3B-Instruct-2507"
 
-# Tinker model paths
+# Tinker model paths for all beauty category
 # SFT_MODEL_PATH = "tinker://1adb47b4-105b-5a29-96fc-d04511e11a1c:train:0/sampler_weights/final"
-SFT_MODEL_PATH = "tinker://1d8eac56-400a-5deb-9b66-13796f2089df:train:0/sampler_weights/final"
 # RL_MODEL_PATH = "tinker://eb7b7216-772d-543c-a09b-c77d6480f7bd:train:0/sampler_weights/final"
 # RL_MODEL_PATH = "tinker://ffe1ba2e-761a-5240-b1a5-5c41101b71c8:train:0/sampler_weights/final"
 # RL_MODEL_PATH = "tinker://208eeeed-e5d3-532d-bff9-0c82c522fbb4:train:0/sampler_weights/000220"
-RL_MODEL_PATH = "tinker://d6f7dc28-e97d-50a1-b904-6be8bdf024ec:train:0/sampler_weights/final"
+# latest
+# SFT_MODEL_PATH = "tinker://1d8eac56-400a-5deb-9b66-13796f2089df:train:0/sampler_weights/final"
+# RL_MODEL_PATH = "tinker://d6f7dc28-e97d-50a1-b904-6be8bdf024ec:train:0/sampler_weights/final"
+
+# tinker model paths for whole dataset
+SFT_MODEL_PATH = "tinker://917fb5a1-4369-51a1-b5c9-77ed7c621f0f:train:0/sampler_weights/final"
+RL_MODEL_PATH = "tinker://e2f6ca41-45fd-575c-bd95-85cee89def22:train:0/sampler_weights/000060"
 
 # Prompt settings
 PROMPT_MODE = JSON  # Options: 'direct' or 'json'

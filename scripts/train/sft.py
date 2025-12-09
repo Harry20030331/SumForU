@@ -3,6 +3,7 @@ import argparse
 import asyncio
 import tempfile
 import os
+import random
 
 import chz
 import wandb
@@ -27,7 +28,7 @@ from tinker_cookbook.tokenizer_utils import get_tokenizer
 import asyncio
 from pathlib import Path
 from tinker_cookbook.eval.evaluators import SamplingClientEvaluator
-from scripts.eval.eval_summaries_multi import (
+from scripts.eval.rule_judge import (
     load_references_and_ref_ratings, compute_rouge, compute_bleu, compute_bertscore,
     compute_distinct, compute_usr, compute_entropy, load_review_tokens, load_persona_tokens, compute_coverage,
     extract_suitability, align_and_filter, compute_score_metrics, extract_summary
@@ -191,6 +192,8 @@ def build_config(
         for f in train_files:
             with open(f, 'r', encoding='utf-8') as file:
                 merged_lines.extend(file.readlines())
+        # Shuffle the merged lines to mix categories
+        random.shuffle(merged_lines)
         # Create temporary file
         temp_train = tempfile.NamedTemporaryFile(mode='w', suffix='.jsonl', delete=False)
         temp_train.writelines(merged_lines)

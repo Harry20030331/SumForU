@@ -127,12 +127,12 @@ python -m scripts.train.rl \
 
 ```bash
 python -m scripts.train.rl \
-   log_path=results/logs/rl_personalized_model_sftinit_v5 \
-   wandb_name=rl_personalized_model_sftinit_v5 \
+   log_path=results/logs/rl_personalized_model_sftinit_v6 \
+   wandb_name=rl_personalized_model_sftinit_v6 \
    learning_rate=1e-5 \
-   train_repeat=15 \
+   train_repeat=2 \
    eval_every=10 \
-   model_path=tinker://7a1e1cf8-20ba-5aff-94b1-bb59b61967cc:train:0/weights/final
+   model_path=tinker://917fb5a1-4369-51a1-b5c9-77ed7c621f0f:train:0/weights/final
 ```
 
 Append `test_data_path=$(realpath dataset/data/processed/rl/v1_rl_test.jsonl)` if you generate a held-out split.
@@ -305,11 +305,6 @@ Total Wins: 616 / 900
 | Persona         | 0.673 |
 
 
-# TODO LIST
-1. SFT EPOCH lr * 2 epoch * 100    - 1-2h  15:30  √
-2. RL reward model rubric          - 5-6h  21:30  
-3. metrics                                 22:30
-4. change judge model                             √
 
 ## Command Line Interfaces
 
@@ -390,3 +385,140 @@ Options:
 - `--train-repeat`: Repeat training data factor (default: 5)
 - `--wandb-project`: Wandb project (default: SumForU)
 - `--wandb-name`: Wandb run name (default: rl_4b_v3)
+
+### test.py
+Run evaluation on a specified model type for whole dataset.
+
+```bash
+python -m scripts.test.test --model_type all \
+   --category whole_dataset \
+   --output results/whole_dataset/
+```
+
+### eval_summaries_multi.py
+run rules-based and quantitative evaluation on multiple model outputs.
+
+```bash
+python -m scripts.eval.rule_judge \
+  --gt-path dataset/data/processed/sft/test \
+  --baseline-path results/whole_dataset/baseline.json \
+  --pe-path results/whole_dataset/pe.json \
+  --sft-path results/whole_dataset/sft.json \
+  --rl-path results/whole_dataset/rl.json
+```
+
+Options:
+- `--gt-path`: Path to ground truth data (required): either a JSON file or a directory containing .jsonl files to merge
+- `--baseline-path`: Path to baseline model outputs JSON (optional)
+- `--sft-path`: Path to SFT model outputs JSON (optional)
+- `--pe-path`: Path to PE model outputs JSON (optional)
+- `--rl-path`: Path to RL model outputs JSON (optional)
+
+### LLM_judge.py
+run LLM-based pairwise judgment evaluation on multiple model outputs.
+
+```bash
+python scripts/eval/llm_judge.py \
+  --test-data-path dataset/data/processed/sft/test \
+  --baseline-path results/whole_dataset/baseline.json \
+  --sft-path results/whole_dataset/sft.json \
+  --pe-path results/whole_dataset/pe.json \
+  --rl-path results/whole_dataset/rl.json
+```
+
+Options:
+- `--test-data-path`: Path to test data (required): either a JSON file or a directory containing .jsonl files to merge
+- `--baseline-path`: Path to baseline model outputs JSON (optional)
+- `--sft-path`: Path to SFT model outputs JSON (optional)
+- `--pe-path`: Path to PE model outputs JSON (optional)
+- `--rl-path`: Path to RL model outputs JSON (optional)
+
+=== Text quality, diversity, semantic similarity, and coverage ===
+method          r1      r2      rL   rLsum   bleu4     D-2     D-3     USR    ENTR  RevCov PersCov   RefBS-R   RevBS-P  PersBS-R
+gt          1.0000  1.0000  1.0000  1.0000  1.0000  0.6697  0.9247  0.9990  7.0896  0.5870  0.0700    1.0000    0.7828    0.7283
+baseline    0.1379  0.0105  0.0941  0.0941  0.0018  0.5911  0.8391  1.0000  6.8543  0.3571  0.2683    0.7135    0.7618    0.8257
+pe          0.1390  0.0098  0.0927  0.0927  0.0028  0.5403  0.8032  1.0000  6.7607  0.3611  0.2148    0.7146    0.7606    0.8172
+sft         0.1408  0.0104  0.0926  0.0926  0.0033  0.5180  0.7837  1.0000  6.8061  0.3029  0.1954    0.7185    0.7542    0.8238
+rl          0.1427  0.0104  0.0909  0.0909  0.0028  0.5155  0.7862  1.0000  6.9287  0.2816  0.1944    0.7220    0.7516    0.8345
+
+=== Suitability vs reference rating (0-5 scale) ===
+method         MAE     MSE   Pearson  Spearman   ExactAcc   Within1Acc    MacroF1    BalancedAcc
+gt          0.0000  0.0000    1.0000    1.0000     1.0000       1.0000     1.0000         1.0000
+baseline    1.2362  2.5105    0.4219    0.4233     0.1151       0.7007     0.1310         0.2484
+pe          1.2515  2.2917    0.4709    0.4498     0.1500       0.6890     0.1627         0.2810
+sft         1.1130  1.9785    0.5772    0.5583     0.1750       0.7720     0.1821         0.2949
+rl          1.0780  2.1985    0.5847    0.5629     0.2300       0.7640     0.2334         0.3142
+
+JUEGE: "openai/gpt-oss-120b"
+--- METHOD: BASELINE ---
+Overall Average Score: 0.441
+Total Wins: 3966 / 9000
+| Dimension       | Win Rate |
+|---------------|---------|
+| Consistency     | 0.464 |
+| Grounding       | 0.361 |
+| Persona         | 0.497 |
+
+--- METHOD: PE ---
+Overall Average Score: 0.439
+Total Wins: 3948 / 9000
+| Dimension       | Win Rate |
+|---------------|---------|
+| Consistency     | 0.419 |
+| Grounding       | 0.466 |
+| Persona         | 0.431 |
+
+--- METHOD: SFT ---
+Overall Average Score: 0.490
+Total Wins: 4413 / 9000
+| Dimension       | Win Rate |
+|---------------|---------|
+| Consistency     | 0.488 |
+| Grounding       | 0.532 |
+| Persona         | 0.452 |
+
+--- METHOD: RL ---
+Overall Average Score: 0.630
+Total Wins: 5673 / 9000
+| Dimension       | Win Rate |
+|---------------|---------|
+| Consistency     | 0.629 |
+| Grounding       | 0.642 |
+| Persona         | 0.620 |
+
+JUDGE: "Qwen/Qwen3-235B-A22B-Instruct-2507"
+--- METHOD: BASELINE ---
+Overall Average Score: 0.336
+Total Wins: 3022 / 9000
+| Dimension       | Win Rate |
+|---------------|---------|
+| Consistency     | 0.441 |
+| Grounding       | 0.331 |
+| Persona         | 0.235 |
+
+--- METHOD: PE ---
+Overall Average Score: 0.489
+Total Wins: 4400 / 9000
+| Dimension       | Win Rate |
+|---------------|---------|
+| Consistency     | 0.435 |
+| Grounding       | 0.709 |
+| Persona         | 0.322 |
+
+--- METHOD: SFT ---
+Overall Average Score: 0.507
+Total Wins: 4566 / 9000
+| Dimension       | Win Rate |
+|---------------|---------|
+| Consistency     | 0.440 |
+| Grounding       | 0.531 |
+| Persona         | 0.551 |
+
+--- METHOD: RL ---
+Overall Average Score: 0.668
+Total Wins: 6012 / 9000
+| Dimension       | Win Rate |
+|---------------|---------|
+| Consistency     | 0.684 |
+| Grounding       | 0.429 |
+| Persona         | 0.892 |
