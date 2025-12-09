@@ -149,19 +149,9 @@ async def evaluate_pair_dimension(
     score = await reward_model(comparison)
     return 1 if score < 0 else 0
 
-async def run_full_evaluation_for_category(test_data: List[Dict], model_outputs: Dict[str, List[str]], methods: List[str], category: str):
+async def run_full_evaluation_for_category(reward_model, test_data: List[Dict], model_outputs: Dict[str, List[str]], methods: List[str], category: str):
     """Iterates through all data points and all method pairs, running the three-dimensional evaluation for a category."""
     
-    # Initialize Tinker components
-    tokenizer = get_tokenizer(RM_MODEL_NAME_FOR_TOKENIZER)
-    renderer = renderers.get_renderer(RM_RENDERER_NAME, tokenizer=tokenizer)
-    service_client = ServiceClient(base_url=BASE_URL)
-    sampling_kwargs = {"base_model": RM_MODEL_NAME_FOR_TOKENIZER}
-    preference_sampling_client = service_client.create_sampling_client(**sampling_kwargs)
-    reward_model = PrometheusEvalPreferenceModelFromChatRenderer(
-        renderer, preference_sampling_client, temperature=RM_TEMPERATURE
-    )
-
     method_pairs = []
     for i in range(len(methods)):
         for j in range(i + 1, len(methods)):
@@ -228,29 +218,64 @@ async def run_full_evaluation_for_category(test_data: List[Dict], model_outputs:
     return method_scores
 
 async def run_full_evaluation(test_data_grouped: Dict[str, List[Dict]], model_outputs_grouped: Dict[str, Dict[str, List[str]]], methods: List[str]):
+    # Initialize Tinker components once
+    tokenizer = get_tokenizer(RM_MODEL_NAME_FOR_TOKENIZER)
+    renderer = renderers.get_renderer(RM_RENDERER_NAME, tokenizer=tokenizer)
+    service_client = ServiceClient(base_url=BASE_URL)
+    sampling_kwargs = {"base_model": RM_MODEL_NAME_FOR_TOKENIZER}
+    preference_sampling_client = service_client.create_sampling_client(**sampling_kwargs)
+    reward_model = PrometheusEvalPreferenceModelFromChatRenderer(
+        renderer, preference_sampling_client, temperature=RM_TEMPERATURE
+    )
+
     results = {}
     for category, test_data in test_data_grouped.items():
         model_outputs = model_outputs_grouped.get(category, {})
         category_methods = [m for m in methods if m in model_outputs]
         if not category_methods:
             continue
-        method_scores = await run_full_evaluation_for_category(test_data, model_outputs, category_methods, category)
+        method_scores = await run_full_evaluation_for_category(reward_model, test_data, model_outputs, category_methods, category)
         results[category] = method_scores
     
-    # Compute overall
+    # Compute overall by aggregating category scores
     print("\nComputing overall...")
-    all_test_data = []
-    all_model_outputs = {}
-    for category in test_data_grouped:
-        all_test_data.extend(test_data_grouped[category])
-        for model_name in model_outputs_grouped.get(category, {}):
-            if model_name not in all_model_outputs:
-                all_model_outputs[model_name] = []
-            all_model_outputs[model_name].extend(model_outputs_grouped[category][model_name])
+    overall_scores = defaultdict(lambda: defaultdict(int))
+    total_test_items = 0
+    overall_methods = set()
+    for category, method_scores in results.items():
+        if category == "overall":
+            continue
+        category_test_items = len(test_data_grouped[category])
+        total_test_items += category_test_items
+        for method, dim_scores in method_scores.items():
+            overall_methods.add(method)
+            for dim, score in dim_scores.items():
+                overall_scores[method][dim] += score
     
-    overall_methods = [m for m in methods if m in all_model_outputs]
+    overall_methods = list(overall_methods)
     if overall_methods:
-        overall_scores = await run_full_evaluation_for_category(all_test_data, all_model_outputs, overall_methods, "overall")
+        # Print overall report
+        print(f"\n" + "="*80)
+        print(f"LLM JUDGE (Qwen3-235B) THREE-DIMENSIONAL COMPARISON REPORT FOR OVERALL")
+        print(f"Total Test Items: {total_test_items}")
+        print(f"Scoring: Each method's score = (wins against other methods) / {(len(overall_methods) - 1) * total_test_items}. Overall = average of three dimensions.")
+        print("="*80)
+        
+        for method in overall_methods:
+            dim_scores = overall_scores[method]
+            total_score = sum(dim_scores.values())
+            overall_avg = total_score / len(JUDGE_RUBRICS) / ((len(overall_methods) - 1) * total_test_items) if JUDGE_RUBRICS else 0
+            
+            print(f"\n--- METHOD: {method.upper()} ---")
+            print(f"Overall Average Score: {overall_avg:.3f}")
+            print(f"Total Wins: {total_score} / {(len(overall_methods) - 1) * total_test_items * len(JUDGE_RUBRICS)}")
+            print(f"| {'Dimension':<15} | Win Rate |")
+            print("|" + "-"*15 + "|" + "-"*9 + "|")
+            for dim in JUDGE_RUBRICS.keys():
+                score = dim_scores[dim]
+                win_rate = score / ((len(overall_methods) - 1) * total_test_items)
+                print(f"| {dim:<15} | {win_rate:.3f} |")
+        
         results["overall"] = overall_scores
     
     # Write to JSON

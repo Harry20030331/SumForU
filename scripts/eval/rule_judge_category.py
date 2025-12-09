@@ -191,8 +191,7 @@ def compute_bleu(preds: List[str], refs: List[str]) -> float:
     result = bleu.compute(predictions=preds, references=references_wrapped)
     return float(result["bleu"])
 
-def compute_bertscore(preds: List[str], refs: List[str]) -> Tuple[float, float, float]:
-    bertscore = evaluate.load("bertscore")
+def compute_bertscore(bertscore, preds: List[str], refs: List[str]) -> Tuple[float, float, float]:
     n = min(len(preds), len(refs))
     preds = preds[:n]
     refs = refs[:n]
@@ -488,6 +487,13 @@ def main():
         default=None,
         help="RL model outputs JSON",
     )
+    parser.add_argument(
+        "--category",
+        type=str,
+        required=False,
+        default=None,
+        help="Specific category to process (e.g., 'All_Beauty'). If not provided, process all categories.",
+    )
     args = parser.parse_args()
 
     output_paths = {
@@ -506,7 +512,21 @@ def main():
 
     gt_grouped, model_outputs_grouped = load_grouped_data(args.gt_path, {k: v for k, v in output_paths.items() if v is not None})
 
+    if args.category:
+        if args.category in gt_grouped:
+            gt_grouped = {args.category: gt_grouped[args.category]}
+            model_outputs_grouped = {args.category: model_outputs_grouped.get(args.category, {})}
+        else:
+            print(f"Category {args.category} not found. Available categories: {list(gt_grouped.keys())}")
+            return
+
     results = {}
+
+    # Preload BERTScore to avoid repeated GPU loading
+    previous_level = hf_logging.get_verbosity()
+    hf_logging.set_verbosity_error()
+    bertscore = evaluate.load("bertscore")
+    hf_logging.set_verbosity(previous_level)
 
     for category, gt_data in gt_grouped.items():
         print(f"\nProcessing category: {category} (samples: {len(gt_data)})")
@@ -555,7 +575,7 @@ def main():
 
             print(f"Computing BERTScore for {name} vs reference...")
             try:
-                _, ref_r, ref_f1 = compute_bertscore(preds, refs)
+                _, ref_r, ref_f1 = compute_bertscore(bertscore, preds, refs)
             except Exception as e:
                 print(f"Error in BERTScore for {name} vs reference: {e}")
                 ref_r, ref_f1 = float("nan"), float("nan")
@@ -563,14 +583,14 @@ def main():
 
             print(f"Computing BERTScore for {name} vs reviews...")
             try:
-                rev_p, _, _ = compute_bertscore(preds, reviews_texts)
+                rev_p, _, _ = compute_bertscore(bertscore, preds, reviews_texts)
             except Exception as e:
                 print(f"Error in BERTScore for {name} vs reviews: {e}")
                 rev_p = float("nan")
 
             print(f"Computing BERTScore for {name} vs persona...")
             try:
-                _, pers_r, _ = compute_bertscore(preds, persona_texts)
+                _, pers_r, _ = compute_bertscore(bertscore, preds, persona_texts)
             except Exception as e:
                 print(f"Error in BERTScore for {name} vs persona: {e}")
                 pers_r = float("nan")
