@@ -177,8 +177,8 @@ Train a supervised fine-tuning model.
 
 ```bash
 python scripts/train/sft.py --category whole_dataset \
-   --log-path results/logs/sft_personalized_model_v5 \
-   --wandb-name sft_personalized_model_v5   \
+   --log-path results/logs/sft_personalized_model \
+   --wandb-name sft_personalized_model   \
    --num-epochs 10
 ```
 
@@ -199,12 +199,12 @@ Train a reinforcement learning model.
 
 ```bash
 python scripts/train/rl.py category=whole_dataset    \
-   log_path=results/logs/rl_personalized_model_sftinit_v6 \
-   wandb_name=rl_personalized_model_sftinit_v6 \
+   log_path=results/logs/rl_personalized_model_sftinit \
+   wandb_name=rl_personalized_model_sftinit \
    learning_rate=1e-5 \
    train_repeat=1 \
    eval_every=10 \
-   model_path=tinker://7a1e1cf8-20ba-5aff-94b1-bb59b61967cc:train:0/weights/final
+   model_path=tinker://path/to/sft/checkpoint
 ```
 
 Options:
