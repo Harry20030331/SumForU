@@ -111,21 +111,14 @@ def build_user_prompt(persona: str, reviews: str) -> str:
 
 def build_prompt(input_data=None) -> list[list[renderers.Message]]:
     """
-    Build message(s) for model input depending on the active mode.
+    Build message(s) for model input from JSON data.
 
     Args:
-        active_mode (str): One of ['json', 'direct'].
-            - 'json': load prompts from a JSON file (each entry has 'input').
-            - 'direct': use a single prompt string.
-        prompt_input (str): Either a JSON file path or a single text prompt.
+        input_data (list): List of items with 'persona' and 'reviews'.
 
     Returns:
-        list or list[list]: 
-            - If 'direct', returns one message list.
-            - If 'json', returns a list of message lists (one per item).
+        list[list]: List of message lists (one per item).
     """
-    active_mode = config.PROMPT_MODE
-
     messages_list = []
 
     if config.USE_SYSTEM_PROMPT:
@@ -133,27 +126,21 @@ def build_prompt(input_data=None) -> list[list[renderers.Message]]:
         # print( config.SYSTEM_PROMPT)
         # print("-------------------------------------------\n")
 
-    if active_mode == config.JSON:
-        
-        print(f"--------------------------")
-        print(f"--- Loaded {len(input_data)} prompts ---")
-        print(f"--------------------------\n")
-        
-        for i, item in enumerate(input_data):
-            input_text = build_user_prompt(item["persona"], item["reviews"])
-            # print(f"Loaded prompt {i + 1}: {input_text}")
-            if config.USE_SYSTEM_PROMPT:
-                messages = [
-                    renderers.Message(role="system", content=config.SYSTEM_PROMPT),
-                    renderers.Message(role="user", content=input_text),
-                ]
-            else:
-                messages = [renderers.Message(role="user", content=input_text)]
-            messages_list.append(messages)
-
-        
-    else:
-        raise ValueError("Invalid active_mode. Choose from ['json'].")
+    print(f"--------------------------")
+    print(f"--- Loaded {len(input_data)} prompts ---")
+    print(f"--------------------------\n")
+    
+    for i, item in enumerate(input_data):
+        input_text = build_user_prompt(item["persona"], item["reviews"])
+        # print(f"Loaded prompt {i + 1}: {input_text}")
+        if config.USE_SYSTEM_PROMPT:
+            messages = [
+                renderers.Message(role="system", content=config.SYSTEM_PROMPT),
+                renderers.Message(role="user", content=input_text),
+            ]
+        else:
+            messages = [renderers.Message(role="user", content=input_text)]
+        messages_list.append(messages)
 
     return messages_list
 

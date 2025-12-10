@@ -2,7 +2,6 @@
 """
 Configuration file storing model paths, sampling parameters, and prompt settings.
 """
-JSON = "json"
 BASELINE = "baseline"
 SFT = "sft"
 RL = "rl"
@@ -24,7 +23,6 @@ SFT_MODEL_PATH = "tinker://917fb5a1-4369-51a1-b5c9-77ed7c621f0f:train:0/sampler_
 RL_MODEL_PATH = "tinker://e2f6ca41-45fd-575c-bd95-85cee89def22:train:0/sampler_weights/000060"
 
 # Prompt settings
-PROMPT_MODE = JSON  # Options: 'direct' or 'json'
 USER_PROMPT = """
 Help write a personalized product summary for a customer based on their purchase persona from product reviews set.
 Output a CONCISE summary in 2-3 sentences(Summary: ) and 1-10 suitability rating(e.g. Suitability: 8/10), without any prefixes and extra explanations.
@@ -36,7 +34,7 @@ persona: <persona>
 product reviews: <reviews>
 """
 
-PROMPT_PATH = "dataset/v1_test_preprocessed.json"  # Used if PROMPT_MODE is 'json'
+PROMPT_PATH = None  # Path to prompt file/directory (if any)
 
 # System prompt settings
 USE_SYSTEM_PROMPT = True

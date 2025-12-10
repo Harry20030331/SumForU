@@ -1,7 +1,75 @@
 # SumForU
 
-SumForU is an end‑to‑end research project for building persona-aware product summaries. The codebase turns large collections of customer reviews into tailored briefings and suitability ratings that help a specific shopper profile decide whether a product is a good fit. The project leans on the [Tinker](https://tinker-docs.thinkingmachines.ai/) platform for model training and inference, combines supervised fine-tuning with reinforcement learning from AI feedback (RLAIF), and ships reusable tooling for data synthesis, evaluation, and experiment tracking.
+<img src="assets/banner.png" alt="SumForU Banner" width="800">
 
+## Overview
+
+SumForU is an end-to-end project designed to generate persona-aware product summaries from customer reviews. Utilizing the Tinker platform[Tinker](https://tinker-docs.thinkingmachines.ai/) for advanced model training and inference, it integrates supervised fine-tuning (SFT) and reinforcement learning from AI feedback (RLAIF) to produce customized product briefings and suitability ratings tailored to individual shopper profiles. The project provides a full suite of tools for data preprocessing, synthesis, model evaluation, and experiment management, enabling researchers to build and assess personalized summarization systems efficiently.
+
+
+## Method
+
+### data construction pipeline
+<img src="assets/data_pipeline.png" alt="data construction pipeline" width="800">
+
+### method overview
+<img src="assets/method_pipeline.png" alt="method overview" width="800">
+
+## Results
+
+### Comparison Analysis
+**Rule-based Judge**
+|  | Summary Text | | | | | Suitability Score | | |
+|:--------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:------------------:|:-------------:|:-------------:|
+| Method | RevCov | PersCov | RefBS-R | RevBS-P | PersBS-R | MAE | Spearman | Within1Acc |
+| baseline | 0.3571 | 0.2683 | 0.7135 | 0.7618 | 0.8257 | 1.2362 | 0.4233 | 0.7007 |
+| pe | 0.3611 | 0.2148 | 0.7146 | 0.7606 | 0.8172 | 1.2515 | 0.4498 | 0.6890 |
+| sft | 0.3029 | 0.1954 | 0.7185 | 0.7542 | 0.8238 | 1.1130 | 0.5583 | 0.7720 |
+| rl | 0.2816 | 0.1944 | 0.7220 | 0.7516 | 0.8345 | 1.0780 | 0.5629 | 0.7640 |
+
+**LLM-based Judge**
+- Judge: Qwen/Qwen3-235B-A22B-Instruct-2507
+
+| Method | Overall | Consistency | Grounding | Persona |
+|--------|---------|-------------|-----------|---------|
+| BASELINE | 0.336 | 0.441 | 0.331 | 0.235 |
+| PE | 0.489 | 0.435 | 0.709 | 0.322 |
+| SFT | 0.507 | 0.440 | 0.531 | 0.551 |
+| RL | 0.668 | 0.684 | 0.429 | 0.892 |
+
+- Judge: openai/gpt-oss-120b
+
+| Method | Overall | Consistency | Grounding | Persona |
+|--------|---------|-------------|-----------|---------|
+| BASELINE | 0.441 | 0.464 | 0.361 | 0.497 |
+| PE | 0.439 | 0.419 | 0.466 | 0.431 |
+| SFT | 0.490 | 0.488 | 0.532 | 0.452 |
+| RL | 0.630 | 0.629 | 0.642 | 0.620 |
+
+### Category Analysis
+<img src="assets/category_results.png" alt="category analysis" width="800">
+
+### Generalization Analysis
+**Video_Games**
+
+| Method | MAE | Spearman | Within1Acc | Consistency | Grounding | Persona |
+|--------|-----|----------|------------|-------------|-----------|---------|
+| baseline | 1.1300 | 0.5199 | 0.7200 | 0.443 | 0.360 | 0.440 |
+| rl | 1.0500 | 0.5522 | 0.7800 | 0.630 | 0.630 | 0.637 |
+
+**Arts_Crafts_and_Sewing**
+
+| Method | MAE | Spearman | Within1Acc | Consistency | Grounding | Persona |
+|--------|-----|----------|------------|-------------|-----------|---------|
+| baseline | 1.3550 | 0.3184 | 0.6400 | 0.480 | 0.390 | 0.457 |
+| rl | 1.1600 | 0.5335 | 0.7500 | 0.640 | 0.587 | 0.617 |
+
+**Industrial_and_Scientific**
+
+| Method | MAE | Spearman | Within1Acc | Consistency | Grounding | Persona |
+|--------|-----|----------|------------|-------------|-----------|---------|
+| baseline | 1.3100 | 0.4882 | 0.6900 | 0.500 | 0.310 | 0.463 |
+| rl | 1.0600 | 0.5418 | 0.7700 | 0.623 | 0.683 | 0.607 |
 
 ## Repository Layout
 
@@ -9,32 +77,34 @@ SumForU is an end‑to‑end research project for building persona-aware product
 SumForU/
 |
 |-- dataset/
-|   |-- __init__.py                 # Path helpers (RAW/INTERIM/SFT/RL/EVAL)
-|   |-- preprocess.py               # Persona extraction from raw review dumps
-|   |-- synthesize_data.py          # CLI to build SFT and RL datasets
+|   |-- __init__.py                 # Path helpers for data directories
+|   |-- preprocess.py               # Data preprocessing scripts
+|   |-- synthesize_data.py          # Generate SFT and RL training data
+|   |-- generate_persona.py         # Create customer personas from reviews
 |   `-- data/
-|       |-- raw/                    # Source review corpora and persona seeds
+|       |-- raw/                    # Raw review data and inputs
 |       `-- processed/
-|           |-- sft/                # Synthetic conversations for fine-tuning
-|           `-- rl/                 # Persona prompts + rubrics for RLAIF
-|
-|-- results/
-|   |-- v1_test_baseline.json       # Example evaluation dumps
-|   |-- v1_test_sft.json            # ...
-|   `-- sft_personalized_model/     # Checkpoint metadata + wandb logs
+|           |-- sft/                # Processed data for supervised fine-tuning
+|           `-- rl/                 # Processed data for reinforcement learning
 |
 |-- scripts/
 |   |-- test/
-|   |   |-- config.py               # Prompt templates and model registry
-|   |   |-- test.py                 # Async inference harness
-|   |   `-- utils.py                # Sampler wrapper + prompt builders
-|   `-- train/
-|       |-- prometheus_types.py     # Prometheus Eval data classes and renderers
-|       |-- rl_env.py               # Environment builders for RL preference loops
-|       |-- rl.py                   # RLAIF training entry point
-|       `-- sft.py                  # Supervised fine-tuning entry point
+|   |   |-- config.py               # Model configurations and **PROMPTS**
+|   |   |-- test.py                 # Inference and testing scripts
+|   |   `-- utils.py                # Utility functions for testing
+|   |-- train/
+|   |   |-- prometheus_types.py     # Data types for reward modeling
+|   |   |-- rl_env.py               # RL environment setup
+|   |   |-- rl.py                   # RL training script
+|   |   `-- sft.py                  # SFT training script
+|   `-- eval/
+|       |-- llm_judge.py            # LLM-based evaluation
+|       `-- rule_judge.py           # Rule-based evaluation
 |
-`-- README.md
+|-- assets/                         # Static assets and resources
+|-- .env.example                    # Example environment variables
+|-- requirements.txt                # Python dependencies
+`-- README.md                       # Project documentation
 ```
 
 
@@ -59,256 +129,20 @@ pip install git+https://github.com/thinking-machines-lab/tinker-cookbook.git
 pip install datasets wandb python-dotenv tqdm rich chz numpy torch
 ```
 
+Install all dependencies from requirements.txt:
+
+```bash
+pip install -r requirements.txt
+```
+
+Set up environment variables:
+
 > **Tinker credentials** – copy `.env.example` to `.env` and add your Tinker API key (and any other secrets your workspace requires). All scripts that talk to Tinker load credentials via `python-dotenv`.
 
-### 2. Prepare Data
 
-Raw review corpora live under `dataset/raw/`. If you're starting from raw stringified review dumps, run the persona extraction step first (swap in the paths matching your split):
+### 2. Data Preprocessing & Synthesis
 
-```bash
-python dataset/generate_persona.py
-```
-
-With personas prepared, regenerate the synthetic datasets used for training:
-
-```bash
-# Generate SFT conversations from the default preprocessed persona set
-python -m dataset.synthesize_data --mode sft \
-   --input dataset/raw/ \
-   --sft-output dataset/processed/
-
-# Generate RL prompts (train split)
-python -m dataset.synthesize_data --mode rl \
-   --input dataset/raw/v1_train_preprocessed.json \
-   --rl-output dataset/processed/rl/v1_rl_train.jsonl
-
-# Optionally, generate RL prompts for a test/dev split
-python -m dataset.synthesize_data --mode rl \
-   --input dataset/data/raw/v1_test_preprocessed.json \
-   --rl-output dataset/data/processed/rl/v1_rl_test.jsonl
-```
-
-Key artifacts:
-
-- `dataset/data/processed/sft/v1_synthesized_output.jsonl` – conversation-format pairs for SFT.
-- `dataset/data/processed/rl/v1_rl_train.jsonl` – persona-aligned prompts, rubrics, and optional references for reward modeling / RL.
-- `dataset/data/processed/rl/v1_rl_test.jsonl` (optional) – run the same RL command against a held-out persona file to produce evaluation prompts.
-
-### 3. Train Models
-
-#### Supervised Fine-tuning (SFT)
-
-`scripts/train/sft.py` wraps the cookbook SFT trainer. Adjust hyperparameters in `build_config()` or override them in a wrapper before launching:
-
-```bash
-python -m scripts.train.sft
-```
-
-Pass overrides (for example, to tweak the shorter five-sentence prompts we train on) via CLI flags:
-
-```bash
-python -m scripts.train.sft \
-   --log-path results/logs/sft_personalized_model_v4 \
-   --wandb-name sft_personalized_model_v4   \
-   --num-epochs 50
-```
-
-The default `max_length` is 65536 tokens to match the compact prompt/response pairs; raise it if you extend conversations. The script reads the SFT JSONL produced in the previous step, logs to wandb, and saves training artifacts under `results/sft_personalized_model/` by default.
-
-#### Reinforcement Learning (RLAIF)
-
-`scripts/train/rl.py` fine-tunes a policy against Prometheus-style pairwise preferences. It defaults to using the same base model for the reward judge; supply `--reward-model-path` if you have a Tinker checkpoint for a reward model.
-
-```bash
-python -m scripts.train.rl \
-   log_path=results/logs/rl_personalized_model \
-   wandb_name=rl_personalized_model
-```
-
-```bash
-python -m scripts.train.rl \
-   log_path=results/logs/rl_personalized_model_sftinit_v6 \
-   wandb_name=rl_personalized_model_sftinit_v6 \
-   learning_rate=1e-5 \
-   train_repeat=2 \
-   eval_every=10 \
-   model_path=tinker://917fb5a1-4369-51a1-b5c9-77ed7c621f0f:train:0/weights/final
-```
-
-Append `test_data_path=$(realpath dataset/data/processed/rl/v1_rl_test.jsonl)` if you generate a held-out split.
-
-Arguments map directly to the `main()` signature; run with `--help` to see all available overrides. Training progress, evaluator metrics, and checkpoints are persisted via wandb and the supplied `log_path`.
-
-### 4. Run Evaluations
-
-Use the async tester in `scripts/test/test.py` to compare the baseline model, the SFT checkpoint, or the RL policy on shared prompts.
-
-```bash
-python -m scripts.test.test --model_type sft \
-   --target_file results/v1_test_sft.json
-```
-
-```bash
-python -m scripts.test.test --model_type rl \
-   --target_file results/v1_test_rl.json
-```
-
-Tweak `scripts/test/config.py` to point at different checkpoints, prompts, or prompting styles (JSON batch vs. direct single prompt, optional system prompts, sampling hyperparameters).
-
-### 5. Calculate quantitative metric for evaluation
-After obtaining model outputs with scripts/test/test.py, use the tools in scripts/eval to compute all quantitative metrics on the test set.
-
-Run the main metric script to get text, semantic, coverage, and rating metrics for all four systems (baseline / PE / SFT / RL):
-
-```bash
-python -m scripts.eval.eval_summaries_multi \
-  --gt-path dataset/data/raw/v1_test_preprocessed.json \
-  --b235b-path results/v1_test_235B.json \
-  --baseline-path results/v1_test_baseline.json \
-  --pe-path results/v1_test_pe.json \
-  --sft-path results/v1_test_sft.json \
-  --rl-path results/v1_test_rl.json
-```
-
-This prints:
-
-Text quality & diversity: ROUGE-1/2/L/Lsum, BLEU-4, Distinct-2/3, USR, ENTR
-
-Semantic similarity: BERTScore (Rev-P/Ref-R/Per-R/Ref-F1)
-
-Persona/content coverage: RevCov (review coverage), PersCov (persona coverage)
-
-Rating alignment: MAE, MSE, Pearson/Spearman, ExactAcc, Within1Acc, MacroF1, BalancedAcc
-
-Optionally, visualize how Suitability behaves as a rating predictor with confusion matrices and per-bin bias:
-
-```bash
-python -m scripts.eval.plot_score_analysis \
-  --gt-path dataset/data/raw/v1_test_preprocessed.json \
-  --baseline-path results/v1_test_baseline.json \
-  --pe-path results/v1_test_pe.json \
-  --sft-path results/v1_test_sft.json \
-  --rl-path results/v1_test_rl.json \
-  --output-path confusion_and_bias_all.png
-```
-This generates a single figure stacking all methods, used in the analysis section to inspect over/under‑rating patterns across score bins.
-
-
-## Experiment Tracking & Outputs
-
-- The [Tinker Cookbook](https://tinker-docs.thinkingmachines.ai/) for providing the training primitives used throughout the project.
-- The [SALT-NLP/cs329x_hw2](https://github.com/SALT-NLP/cs329x_hw2) team for open-sourcing prompts and evaluation patterns that informed our baseline experiments.
-- Everyone who contributed anonymized review data powering SumForU’s personas.
-
-
-
-=== Text quality, diversity, semantic similarity, and coverage ===
-
-method          r1      r2      rL   rLsum   bleu4     D-2     D-3     USR    ENTR  RevCov PersCov   RefBS-R   RevBS-P  PersBS-R
-gt          1.0000  1.0000  1.0000  1.0000  1.0000  0.8271  0.9728  1.0000  6.3820  0.6996  0.0625    1.0000    0.8428    0.8321
-235b_ref    0.1610  0.0106  0.0979  0.0977  0.0000  0.7228  0.9053  1.0000  6.2516  0.3947  0.1839    0.8406    0.8416    0.8760
-baseline    0.1509  0.0091  0.0977  0.0975  0.0000  0.7725  0.9259  1.0000  6.1601  0.4618  0.2380    0.8367    0.8509    0.8746
-pe          0.1528  0.0094  0.0957  0.0956  0.0000  0.7430  0.9140  1.0000  6.2274  0.4759  0.1883    0.8389    0.8495    0.8733
-sft         0.1486  0.0080  0.0919  0.0919  0.0000  0.7125  0.8941  1.0000  6.2076  0.4136  0.1768    0.8377    0.8424    0.8738
-rl          0.1494  0.0082  0.0867  0.0864  0.0000  0.7089  0.8986  1.0000  6.5932  0.4145  0.1485    0.8383    0.8322    0.8765
-
-BERTScore F1 per method (summary vs reference):
-  gt         BERTScore-F1 = 1.0000
-  235b_ref   BERTScore-F1 = 0.8381
-  baseline   BERTScore-F1 = 0.8390
-  pe         BERTScore-F1 = 0.8390
-  sft        BERTScore-F1 = 0.8359
-  rl         BERTScore-F1 = 0.8271
-
-=== Suitability vs reference rating (0-5 scale) ===
-
-method         MAE     MSE   Pearson  Spearman   ExactAcc   Within1Acc    MacroF1    BalancedAcc
-gt          0.0000  0.0000    1.0000    1.0000     1.0000       1.0000     1.0000         1.0000
-235b_ref    1.1150  1.8875    0.6431    0.6571     0.1700       0.7700     0.1652         0.3003
-baseline    1.6050  3.8225    0.2788    0.2294     0.0700       0.5900     0.0788         0.1737
-pe          1.4700  3.0850    0.3631    0.3764     0.1000       0.5900     0.1027         0.2097
-sft         1.3700  2.7750    0.4222    0.4230     0.1400       0.6200     0.1266         0.2394
-rl          1.3650  3.4075    0.4193    0.4489     0.1500       0.6900     0.1476         0.2404
-
-JUDGE: "Qwen/Qwen3-235B-A22B-Instruct-2507"
---- METHOD: BASELINE ---
-Overall Average Score: 0.433
-Total Wins: 390 / 900
-| Dimension       | Win Rate |
-|---------------|---------|
-| Consistency     | 0.503 |
-| Grounding       | 0.337 |
-| Persona         | 0.460 |
-
---- METHOD: PE ---
-Overall Average Score: 0.432
-Total Wins: 389 / 900
-| Dimension       | Win Rate |
-|---------------|---------|
-| Consistency     | 0.403 |
-| Grounding       | 0.463 |
-| Persona         | 0.430 |
-
---- METHOD: SFT ---
-Overall Average Score: 0.450
-Total Wins: 405 / 900
-| Dimension       | Win Rate |
-|---------------|---------|
-| Consistency     | 0.393 |
-| Grounding       | 0.520 |
-| Persona         | 0.437 |
-
---- METHOD: RL ---
-Overall Average Score: 0.684
-Total Wins: 616 / 900
-| Dimension       | Win Rate |
-|---------------|---------|
-| Consistency     | 0.700 |
-| Grounding       | 0.680 |
-| Persona         | 0.673 |
-
-JUDGE: "openai/gpt-oss-120b"
---- METHOD: BASELINE ---
-Overall Average Score: 0.433
-Total Wins: 390 / 900
-| Dimension       | Win Rate |
-|---------------|---------|
-| Consistency     | 0.503 |
-| Grounding       | 0.337 |
-| Persona         | 0.460 |
-
---- METHOD: PE ---
-Overall Average Score: 0.432
-Total Wins: 389 / 900
-| Dimension       | Win Rate |
-|---------------|---------|
-| Consistency     | 0.403 |
-| Grounding       | 0.463 |
-| Persona         | 0.430 |
-
---- METHOD: SFT ---
-Overall Average Score: 0.450
-Total Wins: 405 / 900
-| Dimension       | Win Rate |
-|---------------|---------|
-| Consistency     | 0.393 |
-| Grounding       | 0.520 |
-| Persona         | 0.437 |
-
---- METHOD: RL ---
-Overall Average Score: 0.684
-Total Wins: 616 / 900
-| Dimension       | Win Rate |
-|---------------|---------|
-| Consistency     | 0.700 |
-| Grounding       | 0.680 |
-| Persona         | 0.673 |
-
-
-
-## Command Line Interfaces
-
-### generate_persona.py
+**generate persona**
 Batch preprocess stringified review data to generate personas.
 
 ```bash
@@ -319,7 +153,7 @@ Options:
 - `--input-dir`: Directory containing stringified JSON files (default: dataset/data/raw)
 - `--output-dir`: Directory to save preprocessed JSON files (default: dataset/data/preprocessed)
 
-### synthesize_data.py
+**synthesize data**
 Generate SFT and RL datasets from preprocessed data.
 
 ```bash
@@ -335,7 +169,10 @@ Options:
 - `--concurrency`: Number of concurrent requests for SFT (default: 5000)
 - `--seed`: Random seed (default: 42)
 
-### sft.py
+### 3. Model Training
+Train supervised fine-tuning and reinforcement learning models.
+
+**SFT training**
 Train a supervised fine-tuning model.
 
 ```bash
@@ -357,7 +194,7 @@ Options:
 - `--lr-schedule`: Learning rate schedule (default: linear)
 - `--wandb-name`: Wandb run name (default: sft_4b_v1)
 
-### rl.py
+**RL training**
 Train a reinforcement learning model.
 
 ```bash
@@ -386,16 +223,17 @@ Options:
 - `--wandb-project`: Wandb project (default: SumForU)
 - `--wandb-name`: Wandb run name (default: rl_4b_v3)
 
-### test.py
+### 4. Model Evaluation
 Run evaluation on a specified model type for whole dataset.
 
+**generate model test outputs**
 ```bash
 python -m scripts.test.test --model_type all \
    --category whole_dataset \
    --output results/whole_dataset/
 ```
 
-### eval_summaries_multi.py
+**use rule-based judge**
 run rules-based and quantitative evaluation on multiple model outputs.
 
 ```bash
@@ -414,7 +252,7 @@ Options:
 - `--pe-path`: Path to PE model outputs JSON (optional)
 - `--rl-path`: Path to RL model outputs JSON (optional)
 
-### LLM_judge.py
+**use llm-based judge**
 run LLM-based pairwise judgment evaluation on multiple model outputs.
 
 ```bash
@@ -433,19 +271,7 @@ Options:
 - `--pe-path`: Path to PE model outputs JSON (optional)
 - `--rl-path`: Path to RL model outputs JSON (optional)
 
-## Data Indices
-
-The following table lists the selected data indices for each category:
-
-| Category | Source File | Line Index | Global Index |
-|----------|-------------|------------|--------------|
-| All_Beauty | All_Beauty.jsonl | 81 | 81 |
-| Amazon_Fashion | Amazon_Fashion.jsonl | 14 | 114 |
-| Appliances | Appliances.jsonl | 3 | 203 |
-| Baby_Products | Baby_Products.jsonl | 94 | 394 |
-| CDs_and_Vinyl | CDs_and_Vinyl.jsonl | 35 | 435 |
-| Gift_Cards | Gift_Cards.jsonl | 31 | 531 |
-| Handmade_Products | Handmade_Products.jsonl | 28 | 628 |
-| Health_and_Personal_Care | Health_and_Personal_Care.jsonl | 17 | 717 |
-| Magazine_Subscriptions | Magazine_Subscriptions.jsonl | 94 | 894 |
-| Software | Software.jsonl | 13 | 913 |
+## Acknowledgements
+- The [Tinker Cookbook](https://tinker-docs.thinkingmachines.ai/) for providing the training primitives used throughout the project.
+- The [SALT-NLP/cs329x_hw2](https://github.com/SALT-NLP/cs329x_hw2) team for open-sourcing prompts and evaluation patterns that informed our baseline experiments.
+- Everyone who contributed anonymized review data powering SumForU’s personas.

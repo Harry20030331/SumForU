@@ -255,9 +255,7 @@ sft             0.456        0.453       0.433       0.447
 rl              0.617        0.687       0.600       0.635
 
 
-
-
-# Overall
+# Comparison Analysis
 === Text quality, diversity, semantic similarity, and coverage ===
 method          r1      r2      rL   rLsum   bleu4     D-2     D-3     USR    ENTR  RevCov PersCov   RefBS-R   RevBS-P  PersBS-R
 gt          1.0000  1.0000  1.0000  1.0000  1.0000  0.6697  0.9247  0.9990  7.0896  0.5870  0.0700    1.0000    0.7828    0.7283
@@ -419,3 +417,124 @@ baseline        0.500        0.310       0.463       0.424
 pe              0.460        0.597       0.457       0.504
 sft             0.417        0.410       0.473       0.433
 rl              0.623        0.683       0.607       0.638
+
+# Old Results about All Beauty
+=== Text quality, diversity, semantic similarity, and coverage ===
+
+method          r1      r2      rL   rLsum   bleu4     D-2     D-3     USR    ENTR  RevCov PersCov   RefBS-R   RevBS-P  PersBS-R
+gt          1.0000  1.0000  1.0000  1.0000  1.0000  0.8271  0.9728  1.0000  6.3820  0.6996  0.0625    1.0000    0.8428    0.8321
+235b_ref    0.1610  0.0106  0.0979  0.0977  0.0000  0.7228  0.9053  1.0000  6.2516  0.3947  0.1839    0.8406    0.8416    0.8760
+baseline    0.1509  0.0091  0.0977  0.0975  0.0000  0.7725  0.9259  1.0000  6.1601  0.4618  0.2380    0.8367    0.8509    0.8746
+pe          0.1528  0.0094  0.0957  0.0956  0.0000  0.7430  0.9140  1.0000  6.2274  0.4759  0.1883    0.8389    0.8495    0.8733
+sft         0.1486  0.0080  0.0919  0.0919  0.0000  0.7125  0.8941  1.0000  6.2076  0.4136  0.1768    0.8377    0.8424    0.8738
+rl          0.1494  0.0082  0.0867  0.0864  0.0000  0.7089  0.8986  1.0000  6.5932  0.4145  0.1485    0.8383    0.8322    0.8765
+
+BERTScore F1 per method (summary vs reference):
+  gt         BERTScore-F1 = 1.0000
+  235b_ref   BERTScore-F1 = 0.8381
+  baseline   BERTScore-F1 = 0.8390
+  pe         BERTScore-F1 = 0.8390
+  sft        BERTScore-F1 = 0.8359
+  rl         BERTScore-F1 = 0.8271
+
+=== Suitability vs reference rating (0-5 scale) ===
+
+method         MAE     MSE   Pearson  Spearman   ExactAcc   Within1Acc    MacroF1    BalancedAcc
+gt          0.0000  0.0000    1.0000    1.0000     1.0000       1.0000     1.0000         1.0000
+235b_ref    1.1150  1.8875    0.6431    0.6571     0.1700       0.7700     0.1652         0.3003
+baseline    1.6050  3.8225    0.2788    0.2294     0.0700       0.5900     0.0788         0.1737
+pe          1.4700  3.0850    0.3631    0.3764     0.1000       0.5900     0.1027         0.2097
+sft         1.3700  2.7750    0.4222    0.4230     0.1400       0.6200     0.1266         0.2394
+rl          1.3650  3.4075    0.4193    0.4489     0.1500       0.6900     0.1476         0.2404
+
+JUDGE: "Qwen/Qwen3-235B-A22B-Instruct-2507"
+--- METHOD: BASELINE ---
+Overall Average Score: 0.433
+Total Wins: 390 / 900
+| Dimension       | Win Rate |
+|---------------|---------|
+| Consistency     | 0.503 |
+| Grounding       | 0.337 |
+| Persona         | 0.460 |
+
+--- METHOD: PE ---
+Overall Average Score: 0.432
+Total Wins: 389 / 900
+| Dimension       | Win Rate |
+|---------------|---------|
+| Consistency     | 0.403 |
+| Grounding       | 0.463 |
+| Persona         | 0.430 |
+
+--- METHOD: SFT ---
+Overall Average Score: 0.450
+Total Wins: 405 / 900
+| Dimension       | Win Rate |
+|---------------|---------|
+| Consistency     | 0.393 |
+| Grounding       | 0.520 |
+| Persona         | 0.437 |
+
+--- METHOD: RL ---
+Overall Average Score: 0.684
+Total Wins: 616 / 900
+| Dimension       | Win Rate |
+|---------------|---------|
+| Consistency     | 0.700 |
+| Grounding       | 0.680 |
+| Persona         | 0.673 |
+
+JUDGE: "openai/gpt-oss-120b"
+--- METHOD: BASELINE ---
+Overall Average Score: 0.433
+Total Wins: 390 / 900
+| Dimension       | Win Rate |
+|---------------|---------|
+| Consistency     | 0.503 |
+| Grounding       | 0.337 |
+| Persona         | 0.460 |
+
+--- METHOD: PE ---
+Overall Average Score: 0.432
+Total Wins: 389 / 900
+| Dimension       | Win Rate |
+|---------------|---------|
+| Consistency     | 0.403 |
+| Grounding       | 0.463 |
+| Persona         | 0.430 |
+
+--- METHOD: SFT ---
+Overall Average Score: 0.450
+Total Wins: 405 / 900
+| Dimension       | Win Rate |
+|---------------|---------|
+| Consistency     | 0.393 |
+| Grounding       | 0.520 |
+| Persona         | 0.437 |
+
+--- METHOD: RL ---
+Overall Average Score: 0.684
+Total Wins: 616 / 900
+| Dimension       | Win Rate |
+|---------------|---------|
+| Consistency     | 0.700 |
+| Grounding       | 0.680 |
+| Persona         | 0.673 |
+
+# User Study Results
+## Data Indices
+
+The following table lists the selected data indices for each category:
+
+| Category | Source File | Line Index | Global Index |
+|----------|-------------|------------|--------------|
+| All_Beauty | All_Beauty.jsonl | 81 | 81 |
+| Amazon_Fashion | Amazon_Fashion.jsonl | 14 | 114 |
+| Appliances | Appliances.jsonl | 3 | 203 |
+| Baby_Products | Baby_Products.jsonl | 94 | 394 |
+| CDs_and_Vinyl | CDs_and_Vinyl.jsonl | 35 | 435 |
+| Gift_Cards | Gift_Cards.jsonl | 31 | 531 |
+| Handmade_Products | Handmade_Products.jsonl | 28 | 628 |
+| Health_and_Personal_Care | Health_and_Personal_Care.jsonl | 17 | 717 |
+| Magazine_Subscriptions | Magazine_Subscriptions.jsonl | 94 | 894 |
+| Software | Software.jsonl | 13 | 913 |

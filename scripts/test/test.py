@@ -31,18 +31,17 @@ async def run_inference(model_type: str, target_file: str = None, input_data=Non
     """
     system_prompt_info = "with" if config.USE_SYSTEM_PROMPT else "without"
     print("*****************************************************************")
-    print(f"--- Running {model_type.upper()} model in {config.PROMPT_MODE.upper()} mode {system_prompt_info} system prompt ---")
+    print(f"--- Running {model_type.upper()} model in JSON mode {system_prompt_info} system prompt ---")
     print("*****************************************************************\n")
     model: TinkerSampler = build_model(model_type)
     message_groups: list[list[renderers.Message]] = build_prompt(input_data)
 
     results = await asyncio.gather(*[model.generate(m) for m in message_groups])
     
-    debug_mode = config.DEBUG_MODE if config.PROMPT_MODE == config.JSON else True
+    debug_mode = config.DEBUG_MODE
     if debug_mode:
         # load reference outputs if in JSON mode
-        if config.PROMPT_MODE == config.JSON:
-            references = [item.get("reference_output", []) for item in input_data]
+        references = [item.get("reference_output", []) for item in input_data]
 
         # Print results in order
         print("********************* Inference Results ***********************\n")
@@ -50,7 +49,7 @@ async def run_inference(model_type: str, target_file: str = None, input_data=Non
             print(f"----------  \n[Sample {idx + 1}]")
             print_conversation(message_groups[idx], results[idx], references[idx])
     
-    if config.PROMPT_MODE == config.JSON and target_file:
+    if target_file:
         # Save results to target file
         with open(target_file, "w", encoding="utf-8") as f:
             # only save generated outputs of content messages, exclude roles
@@ -114,7 +113,7 @@ def main():
                     merged_data.append(json.loads(line.strip()))
         input_data = merged_data
 
-    if args.output is None and config.PROMPT_MODE == config.JSON:
+    if args.output is None:
         raise ValueError("Output must be specified in JSON mode to save results.")
     
     # Update config based on command-line args
