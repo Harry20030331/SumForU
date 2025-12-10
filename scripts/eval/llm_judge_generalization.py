@@ -30,9 +30,9 @@ from scripts.test import config
 # --- 1. CONFIGURATION AND INITIAL SETUP (UNCHANGED) ---
 
 BASE_URL = None
-# RM_MODEL_NAME_FOR_TOKENIZER = "openai/gpt-oss-120b"
+RM_MODEL_NAME_FOR_TOKENIZER = "openai/gpt-oss-120b"
 # RM_MODEL_NAME_FOR_TOKENIZER = "Qwen/Qwen3-235B-A22B-Instruct-2507"
-RM_MODEL_NAME_FOR_TOKENIZER = "meta-llama/Llama-3.3-70B-Instruct"
+# RM_MODEL_NAME_FOR_TOKENIZER = "meta-llama/Llama-3.3-70B-Instruct"
 RM_RENDERER_NAME = model_info.get_recommended_renderer_name(RM_MODEL_NAME_FOR_TOKENIZER)
 RM_MODEL_PATH = None
 RM_TEMPERATURE = 0.0
@@ -86,34 +86,6 @@ JUDGE_RUBRICS = {
 
 # --- 3. DATA LOADING AND PREPARATION ---
 
-def load_all_data(test_data_path: Path, output_paths: Dict[str, Path]) -> Tuple[List[Dict], Dict[str, List[str]]]:
-    """Loads preprocessed test data and model outputs from all files."""
-    if test_data_path.is_dir():
-        test_data = []
-        for jsonl_file in sorted(test_data_path.glob("*.jsonl")):
-            with jsonl_file.open("r", encoding="utf-8") as f:
-                for line in f:
-                    if line.strip():
-                        test_data.append(json.loads(line.strip()))
-        print(f"Test data loaded successfully from directory. Total samples: {len(test_data)}")
-    else:
-        with test_data_path.open("r", encoding="utf-8") as f:
-            test_data = json.load(f)
-        print(f"Test data loaded successfully from file. Total samples: {len(test_data)}")
-
-    model_outputs = {}
-    for model_name, path in output_paths.items():
-        if path:
-            try:
-                with open(path, "r", encoding="utf-8") as f:
-                    model_outputs[model_name] = json.load(f)
-                # Ensure model output list matches test data size for correspondence
-                assert len(model_outputs[model_name]) == len(test_data)
-            except (FileNotFoundError, AssertionError):
-                print(f"Error loading or validating output for {model_name} at {path}. Skipping.")
-                continue
-    return test_data, model_outputs
-
 def extract_prompts_for_item(item: Dict) -> Tuple[str, List[Dict], str]:
     """Builds the user prompt and conversation structure for a single item."""
     # Assuming config.SYSTEM_PROMPT and build_user_prompt are available from imports
@@ -149,7 +121,7 @@ async def evaluate_pair_dimension(
     # Convert to 1 if A better, 0 if B better.
     return 1 if score < 0 else 0
 
-async def run_full_evaluation(test_data: List[Dict], model_outputs: Dict[str, List[str]], methods: List[str]):
+async def run_full_evaluation(test_data: List[Dict], model_outputs: Dict[str, List[str]], methods: List[str], category: str, output_dir: Path):
     """Iterates through all data points and all method pairs, running the three-dimensional evaluation."""
     
     # Initialize Tinker components (as per the provided template)
@@ -173,7 +145,7 @@ async def run_full_evaluation(test_data: List[Dict], model_outputs: Dict[str, Li
     # Store aggregated results per method: {method: {'Consistency': total_score, 'Grounding': total_score, ...}}
     method_scores = defaultdict(lambda: defaultdict(int))
     
-    print(f"Starting LLM Judge evaluation across {len(test_data)} test items and {len(method_pairs)} pairs...")
+    print(f"Starting LLM Judge evaluation for category {category} across {len(test_data)} test items and {len(method_pairs)} pairs...")
     
     # Collect all tasks across all items
     all_tasks = []
@@ -217,10 +189,15 @@ async def run_full_evaluation(test_data: List[Dict], model_outputs: Dict[str, Li
         method_scores[m_B][dim] += (1 - score)
     
     print("\n" + "="*80)
-    print("LLM JUDGE (Qwen3-235B) THREE-DIMENSIONAL COMPARISON REPORT")
+    print(f"LLM JUDGE (Qwen3-235B) THREE-DIMENSIONAL COMPARISON REPORT FOR {category.upper()}")
     print(f"Total Test Items: {len(test_data)}")
     print(f"Scoring: Each method's score = (wins against other methods) / {(len(methods) - 1) * len(test_data)}. Overall = average of three dimensions.")
     print("="*80)
+    
+    results_dict = {
+        "category": category,
+        "methods": {},
+    }
     
     for method in methods:
         dim_scores = method_scores[method]
@@ -232,67 +209,75 @@ async def run_full_evaluation(test_data: List[Dict], model_outputs: Dict[str, Li
         print(f"Total Wins: {total_score} / {(len(methods) - 1) * len(test_data) * len(JUDGE_RUBRICS)}")
         print(f"| {'Dimension':<15} | Win Rate |")
         print("|" + "-"*15 + "|" + "-"*9 + "|")
+        dim_dict = {}
         for dim in JUDGE_RUBRICS.keys():
             score = dim_scores[dim]
             win_rate = score / ((len(methods) - 1) * len(test_data))
             print(f"| {dim:<15} | {win_rate:.3f} |")
+            dim_dict[dim] = win_rate
+        results_dict["methods"][method] = {
+            "overall_avg": overall_avg,
+            "dimensions": dim_dict,
+        }
+    
+    # Save to JSON
+    output_path = output_dir / "llm_metrics.json"
+    with output_path.open("w", encoding="utf-8") as f:
+        json.dump(results_dict, f, indent=2)
+    print(f"Results saved to {output_path}")
 
 
 if __name__ == "__main__":
     # Add project root to path if not already done (copied from user template)
     sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
     
-    parser = argparse.ArgumentParser(description="Run LLM Judge evaluation for multiple models.")
+    parser = argparse.ArgumentParser(description="Run LLM Judge evaluation for generalization tasks.")
     parser.add_argument(
-        "--test-data-path",
+        "--input-dir",
         type=Path,
         required=True,
-        help="Path to test data: either a JSON file or a directory containing .jsonl files to merge",
+        help="Input directory containing generalization results, e.g., results/generalization/",
     )
     parser.add_argument(
-        "--baseline-path",
+        "--gt-dir",
         type=Path,
-        required=False,
-        default=None,
-        help="Path to baseline model outputs JSON",
-    )
-    parser.add_argument(
-        "--sft-path",
-        type=Path,
-        required=False,
-        default=None,
-        help="Path to SFT model outputs JSON",
-    )
-    parser.add_argument(
-        "--pe-path",
-        type=Path,
-        required=False,
-        default=None,
-        help="Path to PE model outputs JSON",
-    )
-    parser.add_argument(
-        "--rl-path",
-        type=Path,
-        required=False,
-        default=None,
-        help="Path to RL model outputs JSON",
+        required=True,
+        help="Ground truth directory containing preprocessed generalization data, e.g., dataset/data/generalization/preprocessed/",
     )
     args = parser.parse_args()
 
-    output_paths = {
-        "baseline": args.baseline_path,
-        "sft": args.sft_path,
-        "pe": args.pe_path,
-        "rl": args.rl_path,
-    }
-    
-    # NOTE: Execution requires the user environment to have the 'tinker', 'tinker_cookbook', 
-    # and 'scripts.train.prometheus_types' dependencies installed and configured to access the 235B model.
-    test_data, model_outputs = load_all_data(args.test_data_path, output_paths)
-    
-    methods = [m for m in ["baseline", "pe", "sft", "rl"] if output_paths[m] is not None]
-    if not methods:
-        print("Error: At least one model output path must be provided.")
-        sys.exit(1)
-    
-    asyncio.run(run_full_evaluation(test_data, model_outputs, methods))
+    # Get categories from gt-dir
+    gt_files = list(args.gt_dir.glob("preprocessed_*.json"))
+    categories = [f.stem.replace("preprocessed_", "") for f in gt_files]
+
+    for category in categories:
+        print(f"\nProcessing category: {category}")
+        gt_path = args.gt_dir / f"preprocessed_{category}.json"
+        with gt_path.open("r", encoding="utf-8") as f:
+            test_data = json.load(f)
+
+        category_dir = args.input_dir / category
+        output_paths = {
+            "baseline": category_dir / "baseline.json",
+            "sft": category_dir / "sft.json",
+            "pe": category_dir / "pe.json",
+            "rl": category_dir / "rl.json",
+        }
+        
+        model_outputs = {}
+        for model_name, path in output_paths.items():
+            if path.exists():
+                try:
+                    with open(path, "r", encoding="utf-8") as f:
+                        model_outputs[model_name] = json.load(f)
+                    assert len(model_outputs[model_name]) == len(test_data)
+                except (FileNotFoundError, AssertionError):
+                    print(f"Error loading or validating output for {model_name} at {path}. Skipping.")
+                    continue
+        
+        methods = list(model_outputs.keys())
+        if not methods:
+            print(f"No valid model outputs for category {category}. Skipping.")
+            continue
+        
+        asyncio.run(run_full_evaluation(test_data, model_outputs, methods, category, category_dir))

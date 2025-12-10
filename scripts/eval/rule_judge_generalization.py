@@ -5,7 +5,7 @@ import re
 import string
 from collections import Counter
 from pathlib import Path
-from typing import List, Tuple, Dict
+from typing import List, Tuple
 
 import evaluate
 import numpy as np
@@ -113,7 +113,6 @@ def generate_gt_as_model_outputs(gt_data: list) -> List[str]:
         outputs.append(out)
 
     return outputs
-
 def load_references_and_ref_ratings(gt_data: list) -> Tuple[List[str], List[float]]:
     """
     From ground truth JSON (list[dict]), for each sample:
@@ -363,8 +362,11 @@ def compute_classification_metrics(pred: np.ndarray, gt: np.ndarray) -> dict:
     if pred.size == 0:
         return {"macro_f1": math.nan, "balanced_acc": math.nan}
 
-    gt_label = np.clip(gt, 1, 5).astype(int)
-    pred_label = np.clip(pred, 1, 5).astype(int)
+    gt_label = np.rint(gt)
+    pred_label = np.rint(pred)
+
+    gt_label = np.clip(gt_label, 1, 5).astype(int)
+    pred_label = np.clip(pred_label, 1, 5).astype(int)
 
     all_classes = np.array([1, 2, 3, 4, 5], dtype=int)
 
@@ -390,145 +392,41 @@ def compute_classification_metrics(pred: np.ndarray, gt: np.ndarray) -> dict:
 
     return {"macro_f1": float(macro_f1), "balanced_acc": float(bal_acc)}
 
-# ---------- Load grouped data ----------
-
-def load_grouped_data(gt_path: Path, output_paths: Dict[str, Path]) -> Tuple[Dict[str, List[Dict]], Dict[str, Dict[str, List[str]]]]:
-    """Loads and groups data by category."""
-    if gt_path.is_dir():
-        gt_data = []
-        for json_file in sorted(gt_path.glob("*.json")):
-            with json_file.open("r", encoding="utf-8") as f:
-                category = json_file.stem.replace("preprocessed_", "")  # Extract category from filename
-                data = json.load(f)
-                for item in data:
-                    gt_data.append((category, item))
-        print(f"Ground truth data loaded successfully from directory. Total samples: {len(gt_data)}")
-    else:
-        with gt_path.open("r", encoding="utf-8") as f:
-            gt_list = json.load(f)
-        gt_data = []
-        for item in gt_list:
-            category = item.get("category", "unknown")
-            gt_data.append((category, item))
-        print(f"Ground truth data loaded successfully from file. Total samples: {len(gt_data)}")
-
-    # Group gt_data by category
-    gt_grouped = {}
-    for category, item in gt_data:
-        if category not in gt_grouped:
-            gt_grouped[category] = []
-        gt_grouped[category].append(item)
-
-    # Load model outputs and group by category
-    model_outputs_grouped = {}
-    for model_name, path in output_paths.items():
-        if path:
-            try:
-                with open(path, "r", encoding="utf-8") as f:
-                    outputs = json.load(f)
-                # Assume outputs are in the same order as gt_data
-                idx = 0
-                for category, items in gt_grouped.items():
-                    if category not in model_outputs_grouped:
-                        model_outputs_grouped[category] = {}
-                    model_outputs_grouped[category][model_name] = outputs[idx:idx + len(items)]
-                    idx += len(items)
-                assert idx == len(outputs)
-            except (FileNotFoundError, AssertionError):
-                print(f"Error loading or validating output for {model_name} at {path}. Skipping.")
-                continue
-    return gt_grouped, model_outputs_grouped
-
 # ---------- Main ----------
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Evaluate text quality/diversity + semantic similarity + coverage + suitability vs reference rating for multiple models, grouped by category."
+        description="Evaluate text quality/diversity + semantic similarity + coverage + suitability vs reference rating for multiple models on generalization tasks."
     )
     parser.add_argument(
         "--input-dir",
         type=Path,
         required=True,
-        help="Input directory containing preprocessed JSON files",
+        help="Input directory containing generalization results, e.g., results/generalization/",
     )
     parser.add_argument(
-        "--b235b-path",
+        "--gt-dir",
         type=Path,
-        required=False,
-        default=None,
-        help="235B reference model outputs JSON (e.g., v1_test_235B.json)",
-    )
-    parser.add_argument(
-        "--baseline-path",
-        type=Path,
-        required=False,
-        default=None,
-        help="Baseline model outputs JSON",
-    )
-    parser.add_argument(
-        "--pe-path",
-        type=Path,
-        required=False,
-        default=None,
-        help="PE model outputs JSON",
-    )
-    parser.add_argument(
-        "--sft-path",
-        type=Path,
-        required=False,
-        default=None,
-        help="SFT model outputs JSON",
-    )
-    parser.add_argument(
-        "--rl-path",
-        type=Path,
-        required=False,
-        default=None,
-        help="RL model outputs JSON",
-    )
-    parser.add_argument(
-        "--category",
-        type=str,
-        required=False,
-        default=None,
-        help="Specific category to process (e.g., 'All_Beauty'). If not provided, process all categories.",
+        required=True,
+        help="Ground truth directory containing preprocessed generalization data, e.g., dataset/data/generalization/preprocessed/",
     )
     args = parser.parse_args()
 
-    output_paths = {
-        "gt": None,  # generated
-    }
-    if args.b235b_path:
-        output_paths["235b_ref"] = args.b235b_path
-    if args.baseline_path:
-        output_paths["baseline"] = args.baseline_path
-    if args.pe_path:
-        output_paths["pe"] = args.pe_path
-    if args.sft_path:
-        output_paths["sft"] = args.sft_path
-    if args.rl_path:
-        output_paths["rl"] = args.rl_path
+    # Get categories from gt-dir
+    gt_files = list(args.gt_dir.glob("preprocessed_*.json"))
+    categories = [f.stem.replace("preprocessed_", "") for f in gt_files]
 
-    gt_grouped, model_outputs_grouped = load_grouped_data(args.input_dir, {k: v for k, v in output_paths.items() if v is not None})
-
-    if args.category:
-        if args.category in gt_grouped:
-            gt_grouped = {args.category: gt_grouped[args.category]}
-            model_outputs_grouped = {args.category: model_outputs_grouped.get(args.category, {})}
-        else:
-            print(f"Category {args.category} not found. Available categories: {list(gt_grouped.keys())}")
-            return
-
-    results = {}
-
-    # Preload BERTScore to avoid repeated GPU loading
+    # Preload BERTScore
     previous_level = hf_logging.get_verbosity()
     hf_logging.set_verbosity_error()
     bertscore = evaluate.load("bertscore")
     hf_logging.set_verbosity(previous_level)
 
-    for category, gt_data in gt_grouped.items():
-        print(f"\nProcessing category: {category} (samples: {len(gt_data)})")
+    for category in categories:
+        print(f"\nProcessing category: {category}")
+        gt_path = args.gt_dir / f"preprocessed_{category}.json"
+        with gt_path.open("r", encoding="utf-8") as f:
+            gt_data = json.load(f)
 
         refs, gt_ref_ratings = load_references_and_ref_ratings(gt_data)
         review_vocab_per_sample = load_review_tokens(gt_data)
@@ -539,16 +437,82 @@ def main():
         # Generate GT-as-model outputs
         gt_preds = generate_gt_as_model_outputs(gt_data)
 
+        # Models: baseline, pe, sft, rl
         methods = {
             "gt": gt_preds,
         }
-        if category in model_outputs_grouped:
-            for model_name, outputs in model_outputs_grouped[category].items():
-                methods[model_name] = [extract_summary(x) for x in outputs]
+        category_dir = args.input_dir / category
+        model_files = {
+            "baseline": category_dir / "baseline.json",
+            "pe": category_dir / "pe.json",
+            "sft": category_dir / "sft.json",
+            "rl": category_dir / "rl.json",
+        }
+        for name, path in model_files.items():
+            if path.exists():
+                methods[name] = path
 
-        bert_f1_scores = {}
-        text_quality_metrics = {}
-        suitability_metrics = {}
+        bert_f1_scores: dict[str, float] = {}
+        text_quality_lines = []
+
+        for name, data in methods.items():
+            if isinstance(data, list):
+                preds = [extract_summary(p) for p in data]
+            else:
+                preds = load_predictions(data)
+
+            rouge_res = compute_rouge(preds, refs)
+            bleu4 = compute_bleu(preds, refs)
+            d2 = compute_distinct(preds, n=2)
+            d3 = compute_distinct(preds, n=3)
+            usr = compute_usr(preds)
+            entr = compute_entropy(preds)
+            rev_cov = compute_coverage(preds, review_vocab_per_sample)
+            pers_cov = compute_coverage(preds, persona_vocab_per_sample)
+
+            # summary vs reference_output
+            print(f"Computing BERTScore for {name} vs reference...")
+            try:
+                _, ref_r, ref_f1 = compute_bertscore(bertscore, preds, refs)
+            except Exception as e:
+                print(f"Error in BERTScore for {name} vs reference: {e}")
+                ref_r, ref_f1 = float("nan"), float("nan")
+            bert_f1_scores[name] = ref_f1
+
+            # summary vs reviews: RevBS-P
+            print(f"Computing BERTScore for {name} vs reviews...")
+            try:
+                rev_p, _, _ = compute_bertscore(bertscore, preds, reviews_texts)
+            except Exception as e:
+                print(f"Error in BERTScore for {name} vs reviews: {e}")
+                rev_p = float("nan")
+
+            # summary vs persona: PersBS-R
+            print(f"Computing BERTScore for {name} vs persona...")
+            try:
+                _, pers_r, _ = compute_bertscore(bertscore, preds, persona_texts)
+            except Exception as e:
+                print(f"Error in BERTScore for {name} vs persona: {e}")
+                pers_r = float("nan")
+
+            line = "{:<10} {:7.4f} {:7.4f} {:7.4f} {:7.4f} {:7.4f} {:7.4f} {:7.4f} {:7.4f} {:7.4f} {:7.4f} {:7.4f} {:9.4f} {:9.4f} {:9.4f}".format(
+                name,
+                rouge_res.get("rouge1", 0.0),
+                rouge_res.get("rouge2", 0.0),
+                rouge_res.get("rougeL", 0.0),
+                rouge_res.get("rougeLsum", 0.0),
+                bleu4,
+                d2,
+                d3,
+                usr,
+                entr,
+                rev_cov,
+                pers_cov,
+                ref_r,
+                rev_p,
+                pers_r,
+            )
+            text_quality_lines.append(line)
 
         print("=== Text quality, diversity, semantic similarity, and coverage ===")
         print(
@@ -562,75 +526,8 @@ def main():
             )
         )
 
-        for name, preds in methods.items():
-            rouge_res = compute_rouge(preds, refs)
-            bleu4 = compute_bleu(preds, refs)
-            d2 = compute_distinct(preds, n=2)
-            d3 = compute_distinct(preds, n=3)
-            usr = compute_usr(preds)
-            entr = compute_entropy(preds)
-            rev_cov = compute_coverage(preds, review_vocab_per_sample)
-            pers_cov = compute_coverage(preds, persona_vocab_per_sample)
-
-            print(f"Computing BERTScore for {name} vs reference...")
-            try:
-                _, ref_r, ref_f1 = compute_bertscore(bertscore, preds, refs)
-            except Exception as e:
-                print(f"Error in BERTScore for {name} vs reference: {e}")
-                ref_r, ref_f1 = float("nan"), float("nan")
-            bert_f1_scores[name] = ref_f1
-
-            print(f"Computing BERTScore for {name} vs reviews...")
-            try:
-                rev_p, _, _ = compute_bertscore(bertscore, preds, reviews_texts)
-            except Exception as e:
-                print(f"Error in BERTScore for {name} vs reviews: {e}")
-                rev_p = float("nan")
-
-            print(f"Computing BERTScore for {name} vs persona...")
-            try:
-                _, pers_r, _ = compute_bertscore(bertscore, preds, persona_texts)
-            except Exception as e:
-                print(f"Error in BERTScore for {name} vs persona: {e}")
-                pers_r = float("nan")
-
-            text_quality_metrics[name] = {
-                "rouge1": rouge_res.get("rouge1", 0.0),
-                "rouge2": rouge_res.get("rouge2", 0.0),
-                "rougeL": rouge_res.get("rougeL", 0.0),
-                "rougeLsum": rouge_res.get("rougeLsum", 0.0),
-                "bleu4": bleu4,
-                "d2": d2,
-                "d3": d3,
-                "usr": usr,
-                "entr": entr,
-                "rev_cov": rev_cov,
-                "pers_cov": pers_cov,
-                "ref_r": ref_r,
-                "rev_p": rev_p,
-                "pers_r": pers_r,
-            }
-
-            line = "{:<10} {:7.4f} {:7.4f} {:7.4f} {:7.4f} {:7.4f} {:7.4f} {:7.4f} {:7.4f} {:7.4f} {:7.4f} {:7.4f} {:9.4f} {:9.4f} {:9.4f}".format(
-                name,
-                text_quality_metrics[name]["rouge1"],
-                text_quality_metrics[name]["rouge2"],
-                text_quality_metrics[name]["rougeL"],
-                text_quality_metrics[name]["rougeLsum"],
-                text_quality_metrics[name]["bleu4"],
-                text_quality_metrics[name]["d2"],
-                text_quality_metrics[name]["d3"],
-                text_quality_metrics[name]["usr"],
-                text_quality_metrics[name]["entr"],
-                text_quality_metrics[name]["rev_cov"],
-                text_quality_metrics[name]["pers_cov"],
-                text_quality_metrics[name]["ref_r"],
-                text_quality_metrics[name]["rev_p"],
-                text_quality_metrics[name]["pers_r"],
-            )
+        for line in text_quality_lines:
             print(line)
-
-        # Already printed above
 
         print("\n=== Suitability vs reference rating (0-5 scale) ===")
         print(
@@ -640,84 +537,72 @@ def main():
             )
         )
 
-        for name, preds in methods.items():
-            if name == "gt":
-                pred_scores_raw = [extract_suitability(pred) for pred in preds]
+        suitability_lines = []
+
+        for name, data in methods.items():
+            if isinstance(data, list):
+                pred_scores_raw = [extract_suitability(pred) for pred in data]
                 pred_scores_raw = [raw / 2.0 if raw is not None else float("nan") for raw in pred_scores_raw]
             else:
-                pred_scores_raw = [extract_suitability(pred) for pred in model_outputs_grouped[category][name]]
-                pred_scores_raw = [raw / 2.0 if raw is not None else float("nan") for raw in pred_scores_raw]
+                pred_scores_raw = load_suitability_scores(data)
             pred_arr, gt_arr = align_and_filter(pred_scores_raw, gt_ref_ratings)
             score_metrics = compute_score_metrics(pred_arr, gt_arr)
             cls_metrics = compute_classification_metrics(pred_arr, gt_arr)
 
-            suitability_metrics[name] = {
-                "mae": score_metrics["mae"],
-                "mse": score_metrics["mse"],
-                "pearson": score_metrics["pearson"],
-                "spearman": score_metrics["spearman"],
-                "exact_acc": score_metrics["exact_acc"],
-                "within1_acc": score_metrics["within1_acc"],
-                "macro_f1": cls_metrics["macro_f1"],
-                "balanced_acc": cls_metrics["balanced_acc"],
-            }
-
             line = "{:<10} {:7.4f} {:7.4f} {:9.4f} {:9.4f} {:10.4f} {:12.4f} {:10.4f} {:14.4f}".format(
                 name,
-                suitability_metrics[name]["mae"],
-                suitability_metrics[name]["mse"],
-                suitability_metrics[name]["pearson"],
-                suitability_metrics[name]["spearman"],
-                suitability_metrics[name]["exact_acc"],
-                suitability_metrics[name]["within1_acc"],
-                suitability_metrics[name]["macro_f1"],
-                suitability_metrics[name]["balanced_acc"],
+                score_metrics["mae"],
+                score_metrics["mse"],
+                score_metrics["pearson"],
+                score_metrics["spearman"],
+                score_metrics["exact_acc"],
+                score_metrics["within1_acc"],
+                cls_metrics["macro_f1"],
+                cls_metrics["balanced_acc"],
             )
+            suitability_lines.append(line)
+
+        for line in suitability_lines:
             print(line)
 
-        # Collect results for this category
-        results[category] = {
-            "text_quality": text_quality_metrics,
-            "suitability": suitability_metrics
+        # Save results to JSON
+        results = {
+            "category": category,
+            "text_quality": {},
+            "suitability": {},
         }
+        for i, name in enumerate(methods.keys()):
+            results["text_quality"][name] = {
+                "rouge1": float(text_quality_lines[i].split()[1]),
+                "rouge2": float(text_quality_lines[i].split()[2]),
+                "rougeL": float(text_quality_lines[i].split()[3]),
+                "rougeLsum": float(text_quality_lines[i].split()[4]),
+                "bleu4": float(text_quality_lines[i].split()[5]),
+                "D-2": float(text_quality_lines[i].split()[6]),
+                "D-3": float(text_quality_lines[i].split()[7]),
+                "USR": float(text_quality_lines[i].split()[8]),
+                "ENTR": float(text_quality_lines[i].split()[9]),
+                "RevCov": float(text_quality_lines[i].split()[10]),
+                "PersCov": float(text_quality_lines[i].split()[11]),
+                "RefBS-R": float(text_quality_lines[i].split()[12]),
+                "RevBS-P": float(text_quality_lines[i].split()[13]),
+                "PersBS-R": float(text_quality_lines[i].split()[14]),
+            }
+            results["suitability"][name] = {
+                "MAE": float(suitability_lines[i].split()[1]),
+                "MSE": float(suitability_lines[i].split()[2]),
+                "Pearson": float(suitability_lines[i].split()[3]),
+                "Spearman": float(suitability_lines[i].split()[4]),
+                "ExactAcc": float(suitability_lines[i].split()[5]),
+                "Within1Acc": float(suitability_lines[i].split()[6]),
+                "MacroF1": float(suitability_lines[i].split()[7]),
+                "BalancedAcc": float(suitability_lines[i].split()[8]),
+            }
 
-    # Compute overall
-    print("\nComputing overall...")
-    all_gt_data = []
-    all_model_outputs = {}
-    for category in gt_grouped:
-        all_gt_data.extend(gt_grouped[category])
-        for model_name in model_outputs_grouped.get(category, {}):
-            if model_name not in all_model_outputs:
-                all_model_outputs[model_name] = []
-            all_model_outputs[model_name].extend(model_outputs_grouped[category][model_name])
-
-    # Similar computation for overall
-    refs, gt_ref_ratings = load_references_and_ref_ratings(all_gt_data)
-    review_vocab_per_sample = load_review_tokens(all_gt_data)
-    persona_vocab_per_sample = load_persona_tokens(all_gt_data)
-    persona_texts = load_persona_texts(all_gt_data)
-    reviews_texts = load_reviews_texts(all_gt_data)
-
-    gt_preds = generate_gt_as_model_outputs(all_gt_data)
-
-    methods = {"gt": gt_preds}
-    for model_name, outputs in all_model_outputs.items():
-        methods[model_name] = [extract_summary(x) for x in outputs]
-
-    # Compute overall metrics similarly
-    # ... (similar code as above)
-
-    # For brevity, assume we compute and store
-    results["overall"] = {
-        "text_quality": [],  # fill with overall lines
-        "suitability": []
-    }
-
-    # Write to JSON
-    with open("rule_metric_category.json", "w", encoding="utf-8") as f:
-        json.dump(results, f, indent=2)
-    print("Results written to rule_metric_category.json")
+        output_path = category_dir / "rule_metrics.json"
+        with output_path.open("w", encoding="utf-8") as f:
+            json.dump(results, f, indent=2)
+        print(f"Results saved to {output_path}")
 
 if __name__ == "__main__":
     main()

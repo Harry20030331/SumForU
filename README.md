@@ -433,92 +433,19 @@ Options:
 - `--pe-path`: Path to PE model outputs JSON (optional)
 - `--rl-path`: Path to RL model outputs JSON (optional)
 
-=== Text quality, diversity, semantic similarity, and coverage ===
-method          r1      r2      rL   rLsum   bleu4     D-2     D-3     USR    ENTR  RevCov PersCov   RefBS-R   RevBS-P  PersBS-R
-gt          1.0000  1.0000  1.0000  1.0000  1.0000  0.6697  0.9247  0.9990  7.0896  0.5870  0.0700    1.0000    0.7828    0.7283
-baseline    0.1379  0.0105  0.0941  0.0941  0.0018  0.5911  0.8391  1.0000  6.8543  0.3571  0.2683    0.7135    0.7618    0.8257
-pe          0.1390  0.0098  0.0927  0.0927  0.0028  0.5403  0.8032  1.0000  6.7607  0.3611  0.2148    0.7146    0.7606    0.8172
-sft         0.1408  0.0104  0.0926  0.0926  0.0033  0.5180  0.7837  1.0000  6.8061  0.3029  0.1954    0.7185    0.7542    0.8238
-rl          0.1427  0.0104  0.0909  0.0909  0.0028  0.5155  0.7862  1.0000  6.9287  0.2816  0.1944    0.7220    0.7516    0.8345
+## Data Indices
 
-=== Suitability vs reference rating (0-5 scale) ===
-method         MAE     MSE   Pearson  Spearman   ExactAcc   Within1Acc    MacroF1    BalancedAcc
-gt          0.0000  0.0000    1.0000    1.0000     1.0000       1.0000     1.0000         1.0000
-baseline    1.2362  2.5105    0.4219    0.4233     0.1151       0.7007     0.1310         0.2484
-pe          1.2515  2.2917    0.4709    0.4498     0.1500       0.6890     0.1627         0.2810
-sft         1.1130  1.9785    0.5772    0.5583     0.1750       0.7720     0.1821         0.2949
-rl          1.0780  2.1985    0.5847    0.5629     0.2300       0.7640     0.2334         0.3142
+The following table lists the selected data indices for each category:
 
-JUEGE: "openai/gpt-oss-120b"
---- METHOD: BASELINE ---
-Overall Average Score: 0.441
-Total Wins: 3966 / 9000
-| Dimension       | Win Rate |
-|---------------|---------|
-| Consistency     | 0.464 |
-| Grounding       | 0.361 |
-| Persona         | 0.497 |
-
---- METHOD: PE ---
-Overall Average Score: 0.439
-Total Wins: 3948 / 9000
-| Dimension       | Win Rate |
-|---------------|---------|
-| Consistency     | 0.419 |
-| Grounding       | 0.466 |
-| Persona         | 0.431 |
-
---- METHOD: SFT ---
-Overall Average Score: 0.490
-Total Wins: 4413 / 9000
-| Dimension       | Win Rate |
-|---------------|---------|
-| Consistency     | 0.488 |
-| Grounding       | 0.532 |
-| Persona         | 0.452 |
-
---- METHOD: RL ---
-Overall Average Score: 0.630
-Total Wins: 5673 / 9000
-| Dimension       | Win Rate |
-|---------------|---------|
-| Consistency     | 0.629 |
-| Grounding       | 0.642 |
-| Persona         | 0.620 |
-
-JUDGE: "Qwen/Qwen3-235B-A22B-Instruct-2507"
---- METHOD: BASELINE ---
-Overall Average Score: 0.336
-Total Wins: 3022 / 9000
-| Dimension       | Win Rate |
-|---------------|---------|
-| Consistency     | 0.441 |
-| Grounding       | 0.331 |
-| Persona         | 0.235 |
-
---- METHOD: PE ---
-Overall Average Score: 0.489
-Total Wins: 4400 / 9000
-| Dimension       | Win Rate |
-|---------------|---------|
-| Consistency     | 0.435 |
-| Grounding       | 0.709 |
-| Persona         | 0.322 |
-
---- METHOD: SFT ---
-Overall Average Score: 0.507
-Total Wins: 4566 / 9000
-| Dimension       | Win Rate |
-|---------------|---------|
-| Consistency     | 0.440 |
-| Grounding       | 0.531 |
-| Persona         | 0.551 |
-
---- METHOD: RL ---
-Overall Average Score: 0.668
-Total Wins: 6012 / 9000
-| Dimension       | Win Rate |
-|---------------|---------|
-| Consistency     | 0.684 |
-| Grounding       | 0.429 |
-| Persona         | 0.892 |
+| Category | Source File | Line Index | Global Index |
+|----------|-------------|------------|--------------|
+| All_Beauty | All_Beauty.jsonl | 81 | 81 |
+| Amazon_Fashion | Amazon_Fashion.jsonl | 14 | 114 |
+| Appliances | Appliances.jsonl | 3 | 203 |
+| Baby_Products | Baby_Products.jsonl | 94 | 394 |
+| CDs_and_Vinyl | CDs_and_Vinyl.jsonl | 35 | 435 |
+| Gift_Cards | Gift_Cards.jsonl | 31 | 531 |
+| Handmade_Products | Handmade_Products.jsonl | 28 | 628 |
+| Health_and_Personal_Care | Health_and_Personal_Care.jsonl | 17 | 717 |
+| Magazine_Subscriptions | Magazine_Subscriptions.jsonl | 94 | 894 |
+| Software | Software.jsonl | 13 | 913 |

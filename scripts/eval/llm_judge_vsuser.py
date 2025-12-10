@@ -31,8 +31,8 @@ from scripts.test import config
 
 BASE_URL = None
 # RM_MODEL_NAME_FOR_TOKENIZER = "openai/gpt-oss-120b"
-# RM_MODEL_NAME_FOR_TOKENIZER = "Qwen/Qwen3-235B-A22B-Instruct-2507"
-RM_MODEL_NAME_FOR_TOKENIZER = "meta-llama/Llama-3.3-70B-Instruct"
+RM_MODEL_NAME_FOR_TOKENIZER = "Qwen/Qwen3-235B-A22B-Instruct-2507"
+# RM_MODEL_NAME_FOR_TOKENIZER = "meta-llama/Llama-3.3-70B-Instruct"
 RM_RENDERER_NAME = model_info.get_recommended_renderer_name(RM_MODEL_NAME_FOR_TOKENIZER)
 RM_MODEL_PATH = None
 RM_TEMPERATURE = 0.0
@@ -88,30 +88,23 @@ JUDGE_RUBRICS = {
 
 def load_all_data(test_data_path: Path, output_paths: Dict[str, Path]) -> Tuple[List[Dict], Dict[str, List[str]]]:
     """Loads preprocessed test data and model outputs from all files."""
-    if test_data_path.is_dir():
+    with test_data_path.open("r", encoding="utf-8") as f:
         test_data = []
-        for jsonl_file in sorted(test_data_path.glob("*.jsonl")):
-            with jsonl_file.open("r", encoding="utf-8") as f:
-                for line in f:
-                    if line.strip():
-                        test_data.append(json.loads(line.strip()))
-        print(f"Test data loaded successfully from directory. Total samples: {len(test_data)}")
-    else:
-        with test_data_path.open("r", encoding="utf-8") as f:
-            test_data = json.load(f)
-        print(f"Test data loaded successfully from file. Total samples: {len(test_data)}")
+        for line in f:
+            if line.strip():
+                test_data.append(json.loads(line.strip()))
+    print(f"Test data loaded successfully from {test_data_path}. Total samples: {len(test_data)}")
 
     model_outputs = {}
     for model_name, path in output_paths.items():
-        if path:
-            try:
-                with open(path, "r", encoding="utf-8") as f:
-                    model_outputs[model_name] = json.load(f)
-                # Ensure model output list matches test data size for correspondence
-                assert len(model_outputs[model_name]) == len(test_data)
-            except (FileNotFoundError, AssertionError):
-                print(f"Error loading or validating output for {model_name} at {path}. Skipping.")
-                continue
+        if path and path.exists():
+            with open(path, "r", encoding="utf-8") as f:
+                model_outputs[model_name] = json.load(f)
+            # Ensure model output list matches test data size for correspondence
+            assert len(model_outputs[model_name]) == len(test_data), f"Mismatch for {model_name}"
+        else:
+            print(f"Output file for {model_name} not found at {path}. Skipping.")
+            continue
     return test_data, model_outputs
 
 def extract_prompts_for_item(item: Dict) -> Tuple[str, List[Dict], str]:
@@ -150,7 +143,7 @@ async def evaluate_pair_dimension(
     return 1 if score < 0 else 0
 
 async def run_full_evaluation(test_data: List[Dict], model_outputs: Dict[str, List[str]], methods: List[str]):
-    """Iterates through all data points and all method pairs, running the three-dimensional evaluation."""
+    """Iterates through all data points and all method pairs, running the three-dimensional evaluation and ranking."""
     
     # Initialize Tinker components (as per the provided template)
     tokenizer = get_tokenizer(RM_MODEL_NAME_FOR_TOKENIZER)
@@ -162,25 +155,18 @@ async def run_full_evaluation(test_data: List[Dict], model_outputs: Dict[str, Li
         renderer, preference_sampling_client, temperature=RM_TEMPERATURE
     )
 
-    # methods = ["baseline", "pe", "sft", "rl"]
     method_pairs = []
-    
-    # Define all unique pairs (e.g., baseline vs pe, pe vs sft, etc.)
     for i in range(len(methods)):
         for j in range(i + 1, len(methods)):
             method_pairs.append((methods[i], methods[j]))
     
-    # Store aggregated results per method: {method: {'Consistency': total_score, 'Grounding': total_score, ...}}
-    method_scores = defaultdict(lambda: defaultdict(int))
+    # Store rankings per method: {method: {'rank_sum': 0, 'first_count': 0}}
+    method_stats = defaultdict(lambda: {'rank_sum': 0, 'first_count': 0})
     
     print(f"Starting LLM Judge evaluation across {len(test_data)} test items and {len(method_pairs)} pairs...")
     
-    # Collect all tasks across all items
-    all_tasks = []
-    global_task_map = {}  # key: global_index, value: (item_idx, m_A, m_B, dim)
-    task_to_global_index = {}  # key: task, value: global_index
-    
-    for idx, item in enumerate(test_data):
+    for idx in tqdm(range(len(test_data)), desc="Processing cases"):
+        item = test_data[idx]
         # Extract common context (prompt, reference)
         _, conversation, reference = extract_prompts_for_item(item)
         
@@ -190,9 +176,14 @@ async def run_full_evaluation(test_data: List[Dict], model_outputs: Dict[str, Li
             for m in methods
         }
         
+        # Initialize scores for this case
+        case_scores = {m: 0 for m in methods}
+        
+        # Compare all pairs in all dimensions
+        tasks = []
         for m_A, m_B in method_pairs:
             for dim, rubric in JUDGE_RUBRICS.items():
-                coro = evaluate_pair_dimension(
+                task = evaluate_pair_dimension(
                     reward_model,
                     conversation,
                     responses[m_A],
@@ -200,42 +191,36 @@ async def run_full_evaluation(test_data: List[Dict], model_outputs: Dict[str, Li
                     rubric,
                     reference
                 )
-                task = asyncio.create_task(coro)
-                global_index = len(all_tasks)
-                all_tasks.append(task)
-                task_to_global_index[task] = global_index
-                global_task_map[global_index] = (idx, m_A, m_B, dim)
-    
-    # Run all comparisons in parallel with real-time progress
-    results = await tqdm.gather(*all_tasks, desc="Processing all comparisons")
-    
-    # Aggregate results per method
-    for global_index, score in enumerate(results):
-        item_idx, m_A, m_B, dim = global_task_map[global_index]
-        # Score: 1 if A better, 0 if B better.
-        method_scores[m_A][dim] += score
-        method_scores[m_B][dim] += (1 - score)
+                tasks.append((m_A, m_B, task))
+        
+        # Run tasks for this case
+        results = await asyncio.gather(*[t[2] for t in tasks])
+        
+        for (m_A, m_B, _), score in zip(tasks, results):
+            case_scores[m_A] += score
+            case_scores[m_B] += (1 - score)
+        
+        # Sort methods by score descending (higher score better)
+        sorted_methods = sorted(case_scores.items(), key=lambda x: x[1], reverse=True)
+        
+        # Assign ranks (1-based)
+        for rank, (method, score) in enumerate(sorted_methods, 1):
+            method_stats[method]['rank_sum'] += rank
+            if rank == 1:
+                method_stats[method]['first_count'] += 1
     
     print("\n" + "="*80)
-    print("LLM JUDGE (Qwen3-235B) THREE-DIMENSIONAL COMPARISON REPORT")
+    print("LLM JUDGE RANKING REPORT")
     print(f"Total Test Items: {len(test_data)}")
-    print(f"Scoring: Each method's score = (wins against other methods) / {(len(methods) - 1) * len(test_data)}. Overall = average of three dimensions.")
     print("="*80)
     
     for method in methods:
-        dim_scores = method_scores[method]
-        total_score = sum(dim_scores.values())
-        overall_avg = total_score / len(JUDGE_RUBRICS) / ((len(methods) - 1) * len(test_data)) if JUDGE_RUBRICS else 0
-        
+        stats = method_stats[method]
+        avg_rank = stats['rank_sum'] / len(test_data)
+        first_rate = stats['first_count'] / len(test_data)
         print(f"\n--- METHOD: {method.upper()} ---")
-        print(f"Overall Average Score: {overall_avg:.3f}")
-        print(f"Total Wins: {total_score} / {(len(methods) - 1) * len(test_data) * len(JUDGE_RUBRICS)}")
-        print(f"| {'Dimension':<15} | Win Rate |")
-        print("|" + "-"*15 + "|" + "-"*9 + "|")
-        for dim in JUDGE_RUBRICS.keys():
-            score = dim_scores[dim]
-            win_rate = score / ((len(methods) - 1) * len(test_data))
-            print(f"| {dim:<15} | {win_rate:.3f} |")
+        print(f"Average Rank: {avg_rank:.3f}")
+        print(f"First Place Rate: {first_rate:.3f}")
 
 
 if __name__ == "__main__":
@@ -246,35 +231,31 @@ if __name__ == "__main__":
     parser.add_argument(
         "--test-data-path",
         type=Path,
-        required=True,
-        help="Path to test data: either a JSON file or a directory containing .jsonl files to merge",
+        default=Path("results/user_study/user_study.jsonl"),
+        help="Path to test data JSONL file",
     )
     parser.add_argument(
         "--baseline-path",
         type=Path,
-        required=False,
-        default=None,
+        default=Path("results/user_study/baseline_answers.json"),
         help="Path to baseline model outputs JSON",
     )
     parser.add_argument(
         "--sft-path",
         type=Path,
-        required=False,
-        default=None,
+        default=Path("results/user_study/sft_answers.json"),
         help="Path to SFT model outputs JSON",
     )
     parser.add_argument(
         "--pe-path",
         type=Path,
-        required=False,
-        default=None,
+        default=Path("results/user_study/pe_answers.json"),
         help="Path to PE model outputs JSON",
     )
     parser.add_argument(
         "--rl-path",
         type=Path,
-        required=False,
-        default=None,
+        default=Path("results/user_study/rl_answers.json"),
         help="Path to RL model outputs JSON",
     )
     args = parser.parse_args()
@@ -290,7 +271,7 @@ if __name__ == "__main__":
     # and 'scripts.train.prometheus_types' dependencies installed and configured to access the 235B model.
     test_data, model_outputs = load_all_data(args.test_data_path, output_paths)
     
-    methods = [m for m in ["baseline", "pe", "sft", "rl"] if output_paths[m] is not None]
+    methods = [m for m in ["baseline", "pe", "sft", "rl"] if m in model_outputs]
     if not methods:
         print("Error: At least one model output path must be provided.")
         sys.exit(1)

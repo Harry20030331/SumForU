@@ -1,0 +1,137 @@
+{
+  "category": "Arts_Crafts_and_Sewing",
+  "text_quality": {
+    "gt": {
+      "rouge1": 1.0,
+      "rouge2": 1.0,
+      "rougeL": 1.0,
+      "rougeLsum": 1.0,
+      "bleu4": 1.0,
+      "D-2": 0.824,
+      "D-3": 0.9732,
+      "USR": 1.0,
+      "ENTR": 6.3948,
+      "RevCov": 0.5676,
+      "PersCov": 0.064,
+      "RefBS-R": 1.0,
+      "RevBS-P": 0.7788,
+      "PersBS-R": 0.7252
+    },
+    "baseline": {
+      "rouge1": 0.1336,
+      "rouge2": 0.0083,
+      "rougeL": 0.0918,
+      "rougeLsum": 0.0915,
+      "bleu4": 0.0034,
+      "D-2": 0.7528,
+      "D-3": 0.9153,
+      "USR": 1.0,
+      "ENTR": 6.0597,
+      "RevCov": 0.3917,
+      "PersCov": 0.2473,
+      "RefBS-R": 0.7201,
+      "RevBS-P": 0.7664,
+      "PersBS-R": 0.8186
+    },
+    "pe": {
+      "rouge1": 0.1403,
+      "rouge2": 0.0094,
+      "rougeL": 0.0952,
+      "rougeLsum": 0.0951,
+      "bleu4": 0.0,
+      "D-2": 0.7402,
+      "D-3": 0.9101,
+      "USR": 1.0,
+      "ENTR": 6.1186,
+      "RevCov": 0.416,
+      "PersCov": 0.1883,
+      "RefBS-R": 0.7223,
+      "RevBS-P": 0.7662,
+      "PersBS-R": 0.8136
+    },
+    "sft": {
+      "rouge1": 0.1395,
+      "rouge2": 0.0076,
+      "rougeL": 0.0923,
+      "rougeLsum": 0.0922,
+      "bleu4": 0.0036,
+      "D-2": 0.7003,
+      "D-3": 0.8858,
+      "USR": 1.0,
+      "ENTR": 6.1633,
+      "RevCov": 0.3414,
+      "PersCov": 0.187,
+      "RefBS-R": 0.7249,
+      "RevBS-P": 0.7571,
+      "PersBS-R": 0.8236
+    },
+    "rl": {
+      "rouge1": 0.1399,
+      "rouge2": 0.0068,
+      "rougeL": 0.0905,
+      "rougeLsum": 0.0903,
+      "bleu4": 0.0033,
+      "D-2": 0.7042,
+      "D-3": 0.8864,
+      "USR": 1.0,
+      "ENTR": 6.3472,
+      "RevCov": 0.2995,
+      "PersCov": 0.1886,
+      "RefBS-R": 0.7269,
+      "RevBS-P": 0.7507,
+      "PersBS-R": 0.8338
+    }
+  },
+  "suitability": {
+    "gt": {
+      "MAE": 0.0,
+      "MSE": 0.0,
+      "Pearson": 1.0,
+      "Spearman": 1.0,
+      "ExactAcc": 1.0,
+      "Within1Acc": 1.0,
+      "MacroF1": 1.0,
+      "BalancedAcc": 1.0
+    },
+    "baseline": {
+      "MAE": 1.355,
+      "MSE": 3.0075,
+      "Pearson": 0.3113,
+      "Spearman": 0.3184,
+      "ExactAcc": 0.15,
+      "Within1Acc": 0.64,
+      "MacroF1": 0.1663,
+      "BalancedAcc": 0.2746
+    },
+    "pe": {
+      "MAE": 1.305,
+      "MSE": 2.5375,
+      "Pearson": 0.3944,
+      "Spearman": 0.3769,
+      "ExactAcc": 0.21,
+      "Within1Acc": 0.68,
+      "MacroF1": 0.2032,
+      "BalancedAcc": 0.3527
+    },
+    "sft": {
+      "MAE": 1.19,
+      "MSE": 2.29,
+      "Pearson": 0.4996,
+      "Spearman": 0.4884,
+      "ExactAcc": 0.21,
+      "Within1Acc": 0.73,
+      "MacroF1": 0.1927,
+      "BalancedAcc": 0.3239
+    },
+    "rl": {
+      "MAE": 1.16,
+      "MSE": 2.435,
+      "Pearson": 0.5511,
+      "Spearman": 0.5335,
+      "ExactAcc": 0.21,
+      "Within1Acc": 0.75,
+      "MacroF1": 0.208,
+      "BalancedAcc": 0.2743
+    }
+  }
+}

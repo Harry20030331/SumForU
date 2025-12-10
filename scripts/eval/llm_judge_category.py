@@ -73,13 +73,12 @@ def load_grouped_data(test_data_path: Path, output_paths: Dict[str, Path]) -> Tu
     """Loads and groups data by category."""
     if test_data_path.is_dir():
         test_data = []
-        for jsonl_file in sorted(test_data_path.glob("*.jsonl")):
-            category = jsonl_file.stem  # Use filename as category
-            with jsonl_file.open("r", encoding="utf-8") as f:
-                for line in f:
-                    if line.strip():
-                        item = json.loads(line.strip())
-                        test_data.append((category, item))
+        for json_file in sorted(test_data_path.glob("*.json")):
+            category = json_file.stem.replace("preprocessed_", "")  # Extract category from filename
+            with json_file.open("r", encoding="utf-8") as f:
+                data = json.load(f)
+                for item in data:
+                    test_data.append((category, item))
         print(f"Test data loaded successfully from directory. Total samples: {len(test_data)}")
     else:
         with test_data_path.open("r", encoding="utf-8") as f:
@@ -288,10 +287,10 @@ if __name__ == "__main__":
     
     parser = argparse.ArgumentParser(description="Run LLM Judge evaluation for multiple models, grouped by category.")
     parser.add_argument(
-        "--test-data-path",
+        "--input-dir",
         type=Path,
         required=True,
-        help="Path to test data: either a JSON file or a directory containing .jsonl files to merge",
+        help="Input directory containing preprocessed JSON files",
     )
     parser.add_argument(
         "--baseline-path",
@@ -330,7 +329,7 @@ if __name__ == "__main__":
         "rl": args.rl_path,
     }
     
-    test_data_grouped, model_outputs_grouped = load_grouped_data(args.test_data_path, output_paths)
+    test_data_grouped, model_outputs_grouped = load_grouped_data(args.input_dir, output_paths)
     
     methods = [m for m in ["baseline", "pe", "sft", "rl"] if output_paths[m] is not None]
     if not methods:

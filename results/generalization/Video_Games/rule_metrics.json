@@ -1,0 +1,137 @@
+{
+  "category": "Video_Games",
+  "text_quality": {
+    "gt": {
+      "rouge1": 1.0,
+      "rouge2": 1.0,
+      "rougeL": 1.0,
+      "rougeLsum": 1.0,
+      "bleu4": 1.0,
+      "D-2": 0.7923,
+      "D-3": 0.9659,
+      "USR": 1.0,
+      "ENTR": 6.715,
+      "RevCov": 0.5957,
+      "PersCov": 0.0538,
+      "RefBS-R": 1.0,
+      "RevBS-P": 0.7839,
+      "PersBS-R": 0.7324
+    },
+    "baseline": {
+      "rouge1": 0.1245,
+      "rouge2": 0.0098,
+      "rougeL": 0.0857,
+      "rougeLsum": 0.0861,
+      "bleu4": 0.0,
+      "D-2": 0.7579,
+      "D-3": 0.9298,
+      "USR": 1.0,
+      "ENTR": 6.1231,
+      "RevCov": 0.4018,
+      "PersCov": 0.2742,
+      "RefBS-R": 0.698,
+      "RevBS-P": 0.7682,
+      "PersBS-R": 0.8182
+    },
+    "pe": {
+      "rouge1": 0.1401,
+      "rouge2": 0.0109,
+      "rougeL": 0.0925,
+      "rougeLsum": 0.093,
+      "bleu4": 0.001,
+      "D-2": 0.7348,
+      "D-3": 0.9133,
+      "USR": 1.0,
+      "ENTR": 6.106,
+      "RevCov": 0.4193,
+      "PersCov": 0.2104,
+      "RefBS-R": 0.7007,
+      "RevBS-P": 0.7674,
+      "PersBS-R": 0.8111
+    },
+    "sft": {
+      "rouge1": 0.1449,
+      "rouge2": 0.0098,
+      "rougeL": 0.096,
+      "rougeLsum": 0.0961,
+      "bleu4": 0.0013,
+      "D-2": 0.7283,
+      "D-3": 0.9171,
+      "USR": 1.0,
+      "ENTR": 6.2431,
+      "RevCov": 0.3418,
+      "PersCov": 0.2091,
+      "RefBS-R": 0.7067,
+      "RevBS-P": 0.7585,
+      "PersBS-R": 0.8223
+    },
+    "rl": {
+      "rouge1": 0.1552,
+      "rouge2": 0.0113,
+      "rougeL": 0.098,
+      "rougeLsum": 0.0982,
+      "bleu4": 0.0024,
+      "D-2": 0.7209,
+      "D-3": 0.9046,
+      "USR": 1.0,
+      "ENTR": 6.3939,
+      "RevCov": 0.3191,
+      "PersCov": 0.1947,
+      "RefBS-R": 0.7104,
+      "RevBS-P": 0.7557,
+      "PersBS-R": 0.8307
+    }
+  },
+  "suitability": {
+    "gt": {
+      "MAE": 0.0,
+      "MSE": 0.0,
+      "Pearson": 1.0,
+      "Spearman": 1.0,
+      "ExactAcc": 1.0,
+      "Within1Acc": 1.0,
+      "MacroF1": 1.0,
+      "BalancedAcc": 1.0
+    },
+    "baseline": {
+      "MAE": 1.13,
+      "MSE": 2.13,
+      "Pearson": 0.5291,
+      "Spearman": 0.5199,
+      "ExactAcc": 0.19,
+      "Within1Acc": 0.72,
+      "MacroF1": 0.1992,
+      "BalancedAcc": 0.3038
+    },
+    "pe": {
+      "MAE": 1.07,
+      "MSE": 1.77,
+      "Pearson": 0.5739,
+      "Spearman": 0.572,
+      "ExactAcc": 0.21,
+      "Within1Acc": 0.79,
+      "MacroF1": 0.2027,
+      "BalancedAcc": 0.2886
+    },
+    "sft": {
+      "MAE": 0.945,
+      "MSE": 1.5075,
+      "Pearson": 0.6564,
+      "Spearman": 0.6602,
+      "ExactAcc": 0.23,
+      "Within1Acc": 0.82,
+      "MacroF1": 0.1876,
+      "BalancedAcc": 0.313
+    },
+    "rl": {
+      "MAE": 1.05,
+      "MSE": 2.18,
+      "Pearson": 0.5459,
+      "Spearman": 0.5522,
+      "ExactAcc": 0.28,
+      "Within1Acc": 0.78,
+      "MacroF1": 0.2274,
+      "BalancedAcc": 0.3105
+    }
+  }
+}

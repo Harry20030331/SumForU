@@ -1,3 +1,5 @@
+# Categories Analysis
+
 Processing category: All_Beauty (samples: 100)
 === Text quality, diversity, semantic similarity, and coverage ===
 method          r1      r2      rL   rLsum   bleu4     D-2     D-3     USR    ENTR  RevCov PersCov   RefBS-R   RevBS-P  PersBS-R
@@ -251,3 +253,169 @@ baseline        0.441        0.347       0.497       0.428
 pe              0.420        0.436       0.396       0.417
 sft             0.456        0.453       0.433       0.447
 rl              0.617        0.687       0.600       0.635
+
+
+
+
+# Overall
+=== Text quality, diversity, semantic similarity, and coverage ===
+method          r1      r2      rL   rLsum   bleu4     D-2     D-3     USR    ENTR  RevCov PersCov   RefBS-R   RevBS-P  PersBS-R
+gt          1.0000  1.0000  1.0000  1.0000  1.0000  0.6697  0.9247  0.9990  7.0896  0.5870  0.0700    1.0000    0.7828    0.7283
+baseline    0.1379  0.0105  0.0941  0.0941  0.0018  0.5911  0.8391  1.0000  6.8543  0.3571  0.2683    0.7135    0.7618    0.8257
+pe          0.1390  0.0098  0.0927  0.0927  0.0028  0.5403  0.8032  1.0000  6.7607  0.3611  0.2148    0.7146    0.7606    0.8172
+sft         0.1408  0.0104  0.0926  0.0926  0.0033  0.5180  0.7837  1.0000  6.8061  0.3029  0.1954    0.7185    0.7542    0.8238
+rl          0.1427  0.0104  0.0909  0.0909  0.0028  0.5155  0.7862  1.0000  6.9287  0.2816  0.1944    0.7220    0.7516    0.8345
+
+=== Suitability vs reference rating (0-5 scale) ===
+method         MAE     MSE   Pearson  Spearman   ExactAcc   Within1Acc    MacroF1    BalancedAcc
+gt          0.0000  0.0000    1.0000    1.0000     1.0000       1.0000     1.0000         1.0000
+baseline    1.2362  2.5105    0.4219    0.4233     0.1151       0.7007     0.1310         0.2484
+pe          1.2515  2.2917    0.4709    0.4498     0.1500       0.6890     0.1627         0.2810
+sft         1.1130  1.9785    0.5772    0.5583     0.1750       0.7720     0.1821         0.2949
+rl          1.0780  2.1985    0.5847    0.5629     0.2300       0.7640     0.2334         0.3142
+
+JUEGE: "openai/gpt-oss-120b"
+--- METHOD: BASELINE ---
+Overall Average Score: 0.441
+Total Wins: 3966 / 9000
+| Dimension       | Win Rate |
+|---------------|---------|
+| Consistency     | 0.464 |
+| Grounding       | 0.361 |
+| Persona         | 0.497 |
+
+--- METHOD: PE ---
+Overall Average Score: 0.439
+Total Wins: 3948 / 9000
+| Dimension       | Win Rate |
+|---------------|---------|
+| Consistency     | 0.419 |
+| Grounding       | 0.466 |
+| Persona         | 0.431 |
+
+--- METHOD: SFT ---
+Overall Average Score: 0.490
+Total Wins: 4413 / 9000
+| Dimension       | Win Rate |
+|---------------|---------|
+| Consistency     | 0.488 |
+| Grounding       | 0.532 |
+| Persona         | 0.452 |
+
+--- METHOD: RL ---
+Overall Average Score: 0.630
+Total Wins: 5673 / 9000
+| Dimension       | Win Rate |
+|---------------|---------|
+| Consistency     | 0.629 |
+| Grounding       | 0.642 |
+| Persona         | 0.620 |
+
+JUDGE: "Qwen/Qwen3-235B-A22B-Instruct-2507"
+--- METHOD: BASELINE ---
+Overall Average Score: 0.336
+Total Wins: 3022 / 9000
+| Dimension       | Win Rate |
+|---------------|---------|
+| Consistency     | 0.441 |
+| Grounding       | 0.331 |
+| Persona         | 0.235 |
+
+--- METHOD: PE ---
+Overall Average Score: 0.489
+Total Wins: 4400 / 9000
+| Dimension       | Win Rate |
+|---------------|---------|
+| Consistency     | 0.435 |
+| Grounding       | 0.709 |
+| Persona         | 0.322 |
+
+--- METHOD: SFT ---
+Overall Average Score: 0.507
+Total Wins: 4566 / 9000
+| Dimension       | Win Rate |
+|---------------|---------|
+| Consistency     | 0.440 |
+| Grounding       | 0.531 |
+| Persona         | 0.551 |
+
+--- METHOD: RL ---
+Overall Average Score: 0.668
+Total Wins: 6012 / 9000
+| Dimension       | Win Rate |
+|---------------|---------|
+| Consistency     | 0.684 |
+| Grounding       | 0.429 |
+| Persona         | 0.892 |
+
+Processing category: Video_Games (samples: 100)
+=== Text quality, diversity, semantic similarity, and coverage ===
+method          r1      r2      rL   rLsum   bleu4     D-2     D-3     USR    ENTR  RevCov PersCov   RefBS-R   RevBS-P  PersBS-R
+gt          1.0000  1.0000  1.0000  1.0000  1.0000  0.7923  0.9659  1.0000  6.7150  0.5957  0.0538    1.0000    0.7839    0.7324
+baseline    0.1245  0.0098  0.0857  0.0861  0.0000  0.7579  0.9298  1.0000  6.1231  0.4018  0.2742    0.6980    0.7682    0.8182
+pe          0.1401  0.0109  0.0925  0.0930  0.0010  0.7348  0.9133  1.0000  6.1060  0.4193  0.2104    0.7007    0.7674    0.8111
+sft         0.1449  0.0098  0.0960  0.0961  0.0013  0.7283  0.9171  1.0000  6.2431  0.3418  0.2091    0.7067    0.7585    0.8223
+rl          0.1552  0.0113  0.0980  0.0982  0.0024  0.7209  0.9046  1.0000  6.3939  0.3191  0.1947    0.7104    0.7557    0.8307
+
+=== Suitability vs reference rating (0-5 scale) ===
+method         MAE     MSE   Pearson  Spearman   ExactAcc   Within1Acc    MacroF1    BalancedAcc
+gt          0.0000  0.0000    1.0000    1.0000     1.0000       1.0000     1.0000         1.0000
+baseline    1.1300  2.1300    0.5291    0.5199     0.1900       0.7200     0.1992         0.3038
+pe          1.0700  1.7700    0.5739    0.5720     0.2100       0.7900     0.2027         0.2886
+sft         0.9450  1.5075    0.6564    0.6602     0.2300       0.8200     0.1876         0.3130
+rl          1.0500  2.1800    0.5459    0.5522     0.2800       0.7800     0.2274         0.3105
+
+=== LLM Judge Three-Dimensional Comparison ===
+method          Consistency  Grounding   Persona     Overall
+baseline        0.443        0.360       0.440       0.414
+pe              0.483        0.610       0.420       0.504
+sft             0.443        0.400       0.503       0.449
+rl              0.630        0.630       0.637       0.632
+
+Processing category: Arts_Crafts_and_Sewing (samples: 100)
+=== Text quality, diversity, semantic similarity, and coverage ===
+method          r1      r2      rL   rLsum   bleu4     D-2     D-3     USR    ENTR  RevCov PersCov   RefBS-R   RevBS-P  PersBS-R
+gt          1.0000  1.0000  1.0000  1.0000  1.0000  0.8240  0.9732  1.0000  6.3948  0.5676  0.0640    1.0000    0.7788    0.7252
+baseline    0.1336  0.0083  0.0918  0.0915  0.0034  0.7528  0.9153  1.0000  6.0597  0.3917  0.2473    0.7201    0.7664    0.8186
+pe          0.1403  0.0094  0.0952  0.0951  0.0000  0.7402  0.9101  1.0000  6.1186  0.4160  0.1883    0.7223    0.7662    0.8136
+sft         0.1395  0.0076  0.0923  0.0922  0.0036  0.7003  0.8858  1.0000  6.1633  0.3414  0.1870    0.7249    0.7571    0.8236
+rl          0.1399  0.0068  0.0905  0.0903  0.0033  0.7042  0.8864  1.0000  6.3472  0.2995  0.1886    0.7269    0.7507    0.8338
+
+=== Suitability vs reference rating (0-5 scale) ===
+method         MAE     MSE   Pearson  Spearman   ExactAcc   Within1Acc    MacroF1    BalancedAcc
+gt          0.0000  0.0000    1.0000    1.0000     1.0000       1.0000     1.0000         1.0000
+baseline    1.3550  3.0075    0.3113    0.3184     0.1500       0.6400     0.1663         0.2746
+pe          1.3050  2.5375    0.3944    0.3769     0.2100       0.6800     0.2032         0.3527
+sft         1.1900  2.2900    0.4996    0.4884     0.2100       0.7300     0.1927         0.3239
+rl          1.1600  2.4350    0.5511    0.5335     0.2100       0.7500     0.2080         0.2743
+
+=== LLM Judge Three-Dimensional Comparison ===
+method          Consistency  Grounding   Persona     Overall
+baseline        0.480        0.390       0.457       0.442
+pe              0.490        0.610       0.370       0.490
+sft             0.390        0.413       0.557       0.453
+rl              0.640        0.587       0.617       0.614
+
+Processing category: Industrial_and_Scientific (samples: 100)
+=== Text quality, diversity, semantic similarity, and coverage ===
+method          r1      r2      rL   rLsum   bleu4     D-2     D-3     USR    ENTR  RevCov PersCov   RefBS-R   RevBS-P  PersBS-R
+gt          1.0000  1.0000  1.0000  1.0000  1.0000  0.8281  0.9728  1.0000  6.5760  0.5652  0.0547    1.0000    0.7812    0.7243
+baseline    0.1287  0.0082  0.0892  0.0893  0.0000  0.7821  0.9347  1.0000  6.1991  0.3892  0.2539    0.7059    0.7591    0.8190
+pe          0.1371  0.0071  0.0887  0.0887  0.0030  0.7527  0.9197  1.0000  6.1515  0.3906  0.2051    0.7082    0.7584    0.8124
+sft         0.1411  0.0067  0.0888  0.0888  0.0034  0.7153  0.8927  1.0000  6.2390  0.3229  0.1928    0.7128    0.7496    0.8232
+rl          0.1452  0.0073  0.0891  0.0891  0.0000  0.7134  0.8915  1.0000  6.4038  0.3023  0.1893    0.7151    0.7460    0.8322
+
+=== Suitability vs reference rating (0-5 scale) ===
+method         MAE     MSE   Pearson  Spearman   ExactAcc   Within1Acc    MacroF1    BalancedAcc
+gt          0.0000  0.0000    1.0000    1.0000     1.0000       1.0000     1.0000         1.0000
+baseline    1.3100  2.8300    0.4799    0.4882     0.1200       0.6900     0.1463         0.2445
+pe          1.1900  2.2250    0.5204    0.5058     0.1400       0.7200     0.1503         0.2765
+sft         1.0650  2.0725    0.5715    0.5630     0.2500       0.7700     0.2340         0.3722
+rl          1.0600  2.4500    0.5419    0.5418     0.2900       0.7700     0.2729         0.3678
+
+=== LLM Judge Three-Dimensional Comparison ===
+method          Consistency  Grounding   Persona     Overall
+baseline        0.500        0.310       0.463       0.424
+pe              0.460        0.597       0.457       0.504
+sft             0.417        0.410       0.473       0.433
+rl              0.623        0.683       0.607       0.638
