@@ -137,7 +137,7 @@ pip install -r requirements.txt
 
 Set up environment variables:
 
-> **Tinker credentials** – copy `.env.example` to `.env` and add your Tinker API key (and any other secrets your workspace requires). All scripts that talk to Tinker load credentials via `python-dotenv`.
+> **Tinker credentials** – copy `.env.example` to `.env` and add your [Tinker API key](https://thinkingmachines.ai/blog/tinker-research-and-teaching-grants/) and [wandb API key](https://wandb.ai/site/). All scripts that talk to Tinker load credentials via `python-dotenv`.
 
 
 ### 2. Data Preprocessing & Synthesis
