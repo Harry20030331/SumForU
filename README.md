@@ -4,7 +4,7 @@
 
 ## Overview
 
-SumForU is an end-to-end project designed to generate persona-aware product summaries from customer reviews. Utilizing the Tinker platform[Tinker](https://tinker-docs.thinkingmachines.ai/) for advanced model training and inference, it integrates supervised fine-tuning (SFT) and reinforcement learning from AI feedback (RLAIF) to produce customized product briefings and suitability ratings tailored to individual shopper profiles. The project provides a full suite of tools for data preprocessing, synthesis, model evaluation, and experiment management, enabling researchers to build and assess personalized summarization systems efficiently.
+SumForU is an end-to-end project designed to generate persona-aware product summaries from customer reviews. Utilizing the Tinker platform [Tinker](https://tinker-docs.thinkingmachines.ai/) for advanced model training and inference, it integrates supervised fine-tuning (SFT) and reinforcement learning from AI feedback (RLAIF) to produce customized product briefings and suitability ratings tailored to individual shopper profiles. The project provides a full suite of tools for data preprocessing, synthesis, model evaluation, and experiment management, enabling researchers to build and assess personalized summarization systems efficiently.
 
 
 ## Method
@@ -137,7 +137,7 @@ pip install -r requirements.txt
 
 Set up environment variables:
 
-> **Tinker credentials** – copy `.env.example` to `.env` and add your [Tinker API key](https://thinkingmachines.ai/blog/tinker-research-and-teaching-grants/) and [wandb API key](https://wandb.ai/site/). All scripts that talk to Tinker load credentials via `python-dotenv`.
+> **Tinker credentials** – copy `.env.example` to `.env` and add your [Tinker API key](https://thinkingmachines.ai/blog/tinker-research-and-teaching-grants/) and [wandb API key](https://wandb.ai/authorize). All scripts that talk to Tinker load credentials via `python-dotenv`.
 
 
 ### 2. Data Preprocessing & Synthesis
