@@ -102,28 +102,33 @@ export function validateSummaryRequest(payload = {}, { model = DEFAULT_MODEL } =
 }
 
 async function callOpenAI({ input, apiKey, fetchImpl }) {
+  const body = {
+    model: input.model,
+    response_format: { type: "json_object" },
+    messages: [
+      {
+        role: "system",
+        content:
+          "Return concise, grounded buying guidance as JSON. Never include markdown or unsupported claims."
+      },
+      {
+        role: "user",
+        content: buildSummaryPrompt(input)
+      }
+    ]
+  };
+
+  if (!input.model.startsWith("gpt-5")) {
+    body.temperature = 0.2;
+  }
+
   const response = await fetchImpl("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {
       "content-type": "application/json",
       Authorization: `Bearer ${apiKey}`
     },
-    body: JSON.stringify({
-      model: input.model,
-      temperature: 0.2,
-      response_format: { type: "json_object" },
-      messages: [
-        {
-          role: "system",
-          content:
-            "Return concise, grounded buying guidance as JSON. Never include markdown or unsupported claims."
-        },
-        {
-          role: "user",
-          content: buildSummaryPrompt(input)
-        }
-      ]
-    })
+    body: JSON.stringify(body)
   });
 
   if (!response.ok) {

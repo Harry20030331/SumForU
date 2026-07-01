@@ -88,6 +88,7 @@ test("summary handler calls OpenAI with server-side key", async () => {
   assert.equal(calls[0].url, "https://api.openai.com/v1/chat/completions");
   assert.match(calls[0].options.headers.Authorization, /server-secret/);
   assert.match(calls[0].options.body, /gpt-5-mini/);
+  assert.equal("temperature" in JSON.parse(calls[0].options.body), false);
 });
 
 test("summary handler rate limits an anonymous install id", async () => {
