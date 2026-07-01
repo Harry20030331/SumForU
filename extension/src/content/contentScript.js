@@ -1,3 +1,9 @@
+(() => {
+if (globalThis.__sumforuContentScriptLoaded) {
+  return;
+}
+globalThis.__sumforuContentScriptLoaded = true;
+
 const MAX_EVIDENCE_CHARS = 5000;
 const REVIEW_PATTERNS = [
   /\breview\b/i,
@@ -123,3 +129,4 @@ function normalizeWhitespace(value) {
     .replace(/\s+/g, " ")
     .trim();
 }
+})();

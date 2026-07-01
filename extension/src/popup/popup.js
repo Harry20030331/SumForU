@@ -54,6 +54,11 @@ async function loadContext({ showStatus = true } = {}) {
       throw new Error("No active tab found.");
     }
 
+    await chrome.scripting.executeScript({
+      target: { tabId: state.tabId },
+      files: ["src/content/contentScript.js"]
+    });
+
     const response = await chrome.tabs.sendMessage(state.tabId, { type: "SUMFORU_GET_CONTEXT" });
     if (!response?.ok) {
       throw new Error(response?.error || "Could not read this page.");
