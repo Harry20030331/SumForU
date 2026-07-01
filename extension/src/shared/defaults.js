@@ -17,4 +17,4 @@ export const RECOMMENDATION_LABELS = [
   "Not recommended"
 ];
 
-export const MAX_EVIDENCE_CHARS = 7000;
+export const MAX_EVIDENCE_CHARS = 5000;

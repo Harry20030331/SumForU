@@ -1,4 +1,4 @@
-# Summary for You Backend Proxy
+# Sum for You Backend Proxy
 
 This Render-ready Node service keeps the OpenAI API key on the server and exposes the extension-facing endpoint.
 

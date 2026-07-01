@@ -3,17 +3,17 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Summary for You</title>
+    <title>Sum for You</title>
     <link rel="stylesheet" href="popup.css" />
   </head>
   <body>
     <main class="shell">
       <header class="topbar">
         <div>
-          <p class="eyebrow">Summary for You</p>
+          <p class="eyebrow">Sum for You</p>
           <h1>Buying fit check</h1>
         </div>
-        <button id="settingsButton" class="icon-button" type="button" title="Settings">Set</button>
+        <button id="settingsButton" class="settings-link" type="button">Settings</button>
       </header>
 
       <section class="product-panel" aria-live="polite">
@@ -28,7 +28,6 @@
       </label>
 
       <div class="actions">
-        <button id="refreshButton" class="secondary" type="button">Refresh</button>
         <button id="generateButton" class="primary" type="button">Generate</button>
       </div>
 
@@ -44,17 +43,16 @@
         </div>
         <p id="productSummary" class="summary"></p>
         <p id="personaFit" class="fit"></p>
-        <div class="columns">
-          <div>
+        <div class="takeaways">
+          <section>
             <h3>Strengths</h3>
             <ul id="strengthsList"></ul>
-          </div>
-          <div>
+          </section>
+          <section>
             <h3>Concerns</h3>
             <ul id="concernsList"></ul>
-          </div>
+          </section>
         </div>
-        <p id="groundingText" class="grounding"></p>
       </section>
     </main>
     <script src="popup.js"></script>

@@ -32,7 +32,7 @@ test("validateSummaryRequest trims long evidence for cost control", () => {
     }
   });
 
-  assert.equal(result.context.evidenceText.length <= 9000, true);
+  assert.equal(result.context.evidenceText.length <= 5000, true);
   assert.equal(result.model, "gpt-5-mini");
 });
 

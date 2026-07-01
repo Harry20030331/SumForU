@@ -5,7 +5,7 @@ import {
 } from "../../extension/src/shared/openaiClient.js";
 
 const DEFAULT_MODEL = "gpt-5-mini";
-const MAX_EVIDENCE_CHARS = 9000;
+const MAX_EVIDENCE_CHARS = 5000;
 const MAX_PERSONA_CHARS = 1200;
 const MIN_EVIDENCE_CHARS = 120;
 const ALLOWED_RECOMMENDATIONS = new Set([

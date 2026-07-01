@@ -1,4 +1,4 @@
-const MAX_EVIDENCE_CHARS = 7000;
+const MAX_EVIDENCE_CHARS = 5000;
 const REVIEW_PATTERNS = [
   /\breview\b/i,
   /\bcustomer[s]?\b/i,

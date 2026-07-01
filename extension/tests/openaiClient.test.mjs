@@ -20,6 +20,9 @@ test("buildSummaryPrompt asks for grounded JSON personalized to persona", () => 
 
   assert.match(prompt, /Budget-conscious student/);
   assert.match(prompt, /Do not invent/);
+  assert.match(prompt, /Sum for You/);
+  assert.match(prompt, /Keep the whole response compact/);
+  assert.match(prompt, /2 or 3/);
   assert.match(prompt, /suitabilityScore/);
 });
 
@@ -35,15 +38,27 @@ test("parseSummaryJson recovers JSON wrapped in prose", () => {
 
 test("normalizeSummaryResult clamps score and fills arrays", () => {
   const result = normalizeSummaryResult({
-    productSummary: "Useful",
+    productSummary: "Useful ".repeat(40),
+    personaFit: "Good ".repeat(60),
     suitabilityScore: 42,
     recommendation: "surprising",
-    strengths: "Portable",
-    concerns: null
+    strengths: [
+      "Portable ".repeat(30),
+      "Durable",
+      "Easy",
+      "Extra item"
+    ],
+    concerns: ["Price ".repeat(30), "Warranty", "Availability", "Extra concern"],
+    grounding: "Based on review text ".repeat(20)
   });
 
   assert.equal(result.suitabilityScore, 10);
   assert.equal(result.recommendation, "Mixed");
-  assert.deepEqual(result.strengths, ["Portable"]);
-  assert.deepEqual(result.concerns, []);
+  assert.equal(result.strengths.length, 3);
+  assert.equal(result.concerns.length, 3);
+  assert.equal(result.strengths[0].split(/\s+/).length <= 16, true);
+  assert.equal(result.concerns[0].split(/\s+/).length <= 16, true);
+  assert.equal(result.productSummary.split(/\s+/).length <= 28, true);
+  assert.equal(result.personaFit.split(/\s+/).length <= 36, true);
+  assert.equal(result.grounding.split(/\s+/).length <= 22, true);
 });

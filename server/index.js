@@ -26,6 +26,6 @@ if (!server) {
     res.writeHead(response.status, Object.fromEntries(response.headers));
     res.end(Buffer.from(await response.arrayBuffer()));
   }).listen(port, host, () => {
-    console.log(`Summary for You proxy listening on ${host}:${port}`);
+    console.log(`Sum for You proxy listening on ${host}:${port}`);
   });
 }

@@ -1,7 +1,7 @@
 import { DEFAULT_MODEL, RECOMMENDATION_LABELS } from "./defaults.js";
 
 export function buildSummaryPrompt({ persona, context }) {
-  return `You are Summary for You, a shopping assistant that creates grounded, persona-aware product buying summaries.
+  return `You are Sum for You, a shopping assistant that creates grounded, persona-aware product buying summaries.
 
 Shopper persona:
 ${persona}
@@ -19,15 +19,17 @@ Instructions:
 - Do not invent product claims, specifications, discounts, review counts, or guarantees not present in the evidence.
 - Personalize the tradeoffs to the shopper persona.
 - If evidence is thin or mixed, say so.
+- Keep the whole response compact for a narrow Chrome extension popup.
+- Prefer the highest-signal review patterns; do not over-explain.
 - Return only valid JSON with this exact shape:
 {
-  "productSummary": "one sentence",
-  "personaFit": "two to three sentences",
-  "strengths": ["3 to 5 personalized strengths"],
-  "concerns": ["3 to 5 personalized concerns"],
+  "productSummary": "one short sentence, 22 words or fewer",
+  "personaFit": "one short sentence, 30 words or fewer",
+  "strengths": ["2 or 3 concise strengths, each 12 words or fewer"],
+  "concerns": ["2 or 3 concise concerns, each 12 words or fewer"],
   "suitabilityScore": 1,
   "recommendation": "Strong fit | Good fit | Mixed | Not recommended",
-  "grounding": "short explanation of what evidence the recommendation relies on"
+  "grounding": "one evidence note, 18 words or fewer"
 }`;
 }
 
@@ -97,13 +99,16 @@ export function normalizeSummaryResult(raw = {}) {
     : "Mixed";
 
   return {
-    productSummary: asString(raw.productSummary, "No product summary returned."),
-    personaFit: asString(raw.personaFit, "The available evidence is too thin to assess fit."),
-    strengths: asList(raw.strengths).slice(0, 5),
-    concerns: asList(raw.concerns).slice(0, 5),
+    productSummary: truncateWords(asString(raw.productSummary, "No product summary returned."), 28),
+    personaFit: truncateWords(
+      asString(raw.personaFit, "The available evidence is too thin to assess fit."),
+      36
+    ),
+    strengths: asList(raw.strengths).slice(0, 3).map((item) => truncateWords(item, 16)),
+    concerns: asList(raw.concerns).slice(0, 3).map((item) => truncateWords(item, 16)),
     suitabilityScore: Number.isFinite(score) ? Math.min(10, Math.max(1, Math.round(score))) : 5,
     recommendation,
-    grounding: asString(raw.grounding, "Grounding was not provided by the model.")
+    grounding: truncateWords(asString(raw.grounding, "Grounding was not provided by the model."), 22)
   };
 }
 
@@ -120,4 +125,12 @@ function asList(value) {
     return [value.trim()];
   }
   return [];
+}
+
+function truncateWords(value, maxWords) {
+  const words = String(value || "").trim().split(/\s+/).filter(Boolean);
+  if (words.length <= maxWords) {
+    return words.join(" ");
+  }
+  return `${words.slice(0, maxWords).join(" ")}...`;
 }

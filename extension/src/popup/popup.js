@@ -13,7 +13,6 @@ const state = {
 
 const els = {
   settingsButton: document.querySelector("#settingsButton"),
-  refreshButton: document.querySelector("#refreshButton"),
   generateButton: document.querySelector("#generateButton"),
   productTitle: document.querySelector("#productTitle"),
   siteLabel: document.querySelector("#siteLabel"),
@@ -26,13 +25,11 @@ const els = {
   productSummary: document.querySelector("#productSummary"),
   personaFit: document.querySelector("#personaFit"),
   strengthsList: document.querySelector("#strengthsList"),
-  concernsList: document.querySelector("#concernsList"),
-  groundingText: document.querySelector("#groundingText")
+  concernsList: document.querySelector("#concernsList")
 };
 
 document.addEventListener("DOMContentLoaded", init);
 els.settingsButton.addEventListener("click", () => chrome.runtime.openOptionsPage());
-els.refreshButton.addEventListener("click", loadContext);
 els.generateButton.addEventListener("click", generateSummary);
 els.personaInput.addEventListener("change", () => {
   chrome.storage.local.set({ [STORAGE_KEYS.persona]: els.personaInput.value.trim() });
@@ -44,10 +41,11 @@ async function init() {
   await loadContext();
 }
 
-async function loadContext() {
-  setStatus("Reading this tab...", "info");
+async function loadContext({ showStatus = true } = {}) {
+  if (showStatus) {
+    setStatus("Reading this tab...", "info");
+  }
   hideResult();
-  els.generateButton.disabled = true;
 
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -64,6 +62,7 @@ async function loadContext() {
     state.context = response.context;
     renderContext(response.context);
     clearStatus();
+    return true;
   } catch (error) {
     state.context = null;
     renderContext(null);
@@ -71,12 +70,17 @@ async function loadContext() {
       "I could not read this page. Reload the page after installing the extension, then try again.",
       "error"
     );
+    return false;
   }
 }
 
 async function generateSummary() {
+  if (!state.context) {
+    await loadContext({ showStatus: false });
+  }
+
   if (!state.context?.isSupported) {
-    setStatus("This page does not have enough product evidence for a useful summary.", "error");
+    setStatus("I need a readable product page before generating.", "error");
     return;
   }
 
@@ -108,17 +112,17 @@ function renderContext(context) {
   if (!context) {
     els.siteLabel.textContent = "No readable page";
     els.productTitle.textContent = "Product page";
-    els.supportText.textContent = "Open a product page and refresh.";
-    els.generateButton.disabled = true;
+    els.supportText.textContent = "Open or reload a product page, then Generate.";
+    els.generateButton.disabled = false;
     return;
   }
 
   els.siteLabel.textContent = context.hostname || "Current tab";
   els.productTitle.textContent = context.title;
   els.supportText.textContent = context.isSupported
-    ? `${context.evidenceText.length.toLocaleString()} characters of page evidence detected.`
+    ? "Ready to summarize this page."
     : "This page has limited product evidence; try a product detail page.";
-  els.generateButton.disabled = !context.isSupported;
+  els.generateButton.disabled = false;
 }
 
 function renderResult(result) {
@@ -128,7 +132,6 @@ function renderResult(result) {
   els.personaFit.textContent = result.personaFit;
   renderList(els.strengthsList, result.strengths);
   renderList(els.concernsList, result.concerns);
-  els.groundingText.textContent = result.grounding;
   els.resultPanel.classList.remove("hidden");
 }
 

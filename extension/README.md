@@ -1,6 +1,6 @@
-# Summary for You Chrome Extension Demo
+# Sum for You Chrome Extension Demo
 
-This folder contains a Chrome extension demo for persona-aware product summaries. It is separate from the research pipeline and calls the Summary for You backend proxy, which keeps the OpenAI API key on the server.
+This folder contains a Chrome extension demo for persona-aware product summaries. It is separate from the research pipeline and calls the Sum for You backend proxy, which keeps the OpenAI API key on the server.
 
 ## Load The Extension
 
@@ -52,7 +52,7 @@ Then open:
 ## Expected Flow
 
 1. Open a product page.
-2. Click the Summary for You extension.
+2. Click the Sum for You extension.
 3. Edit the shopper persona if needed.
 4. Click Generate.
 5. Review the product summary, persona fit, strengths, concerns, score, recommendation, and grounding note.
