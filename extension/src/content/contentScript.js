@@ -5,15 +5,16 @@ const REVIEW_PATTERNS = [
   /\brating[s]?\b/i,
   /\bstar[s]?\b/i,
   /\bverified\b/i,
-  /\bpros?\b/i,
-  /\bcons?\b/i
+  /\bpros\b/i,
+  /\bcons\b/i
 ];
 const TITLE_SELECTORS = [
-  "[data-testid*='title' i]",
+  "h1",
   "[class*='product-title' i]",
   "[class*='product__title' i]",
   "[id*='productTitle' i]",
-  "h1"
+  "[data-testid*='product-title' i]",
+  "[data-testid*='title' i]"
 ];
 const EVIDENCE_SELECTORS = [
   "main",
@@ -78,7 +79,10 @@ function trimEvidenceText(text, maxChars) {
   }
 
   const highSignal = reviewLines.join(" ");
-  if (highSignal.length >= Math.min(40, maxChars)) {
+  if (
+    highSignal.length >= Math.min(maxChars, 900) ||
+    (maxChars <= 200 && highSignal.length >= Math.min(40, maxChars))
+  ) {
     return highSignal.slice(0, maxChars).trim();
   }
 
