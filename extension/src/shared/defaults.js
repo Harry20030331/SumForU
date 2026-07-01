@@ -4,7 +4,7 @@ export const STORAGE_KEYS = {
   persona: "sumforu.persona"
 };
 
-export const DEFAULT_BACKEND_URL = "http://127.0.0.1:8788";
+export const DEFAULT_BACKEND_URL = "https://sumforu-api.onrender.com";
 export const DEFAULT_MODEL = "gpt-5-mini";
 
 export const DEFAULT_PERSONA =

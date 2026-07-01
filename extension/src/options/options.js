@@ -2,7 +2,7 @@ const STORAGE_KEYS = {
   backendUrl: "sumforu.backendUrl",
   persona: "sumforu.persona"
 };
-const DEFAULT_BACKEND_URL = "http://127.0.0.1:8788";
+const DEFAULT_BACKEND_URL = "https://sumforu-api.onrender.com";
 const DEFAULT_PERSONA =
   "A practical shopper who wants good long-term value, low hassle, and clear tradeoffs before buying.";
 
