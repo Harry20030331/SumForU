@@ -1,0 +1,8 @@
+{
+  "type": "module",
+  "scripts": {
+    "test": "node --test extension/tests/*.test.mjs server/tests/*.test.mjs",
+    "start": "node server/index.js"
+  },
+  "devDependencies": {}
+}

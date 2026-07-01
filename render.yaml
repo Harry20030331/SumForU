@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: sumforu-api
+    runtime: node
+    plan: free
+    region: oregon
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /healthz
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_MODEL
+        value: gpt-5-mini
+      - key: SUMFORU_DAILY_LIMIT
+        value: "30"

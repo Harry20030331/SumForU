@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Summary for You</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Summary for You</p>
+          <h1>Buying fit check</h1>
+        </div>
+        <button id="settingsButton" class="icon-button" type="button" title="Settings">Set</button>
+      </header>
+
+      <section class="product-panel" aria-live="polite">
+        <p class="site" id="siteLabel">Detecting page...</p>
+        <h2 id="productTitle">Product page</h2>
+        <p class="support" id="supportText">Reading visible product evidence.</p>
+      </section>
+
+      <label class="field">
+        <span>Shopper persona</span>
+        <textarea id="personaInput" rows="4"></textarea>
+      </label>
+
+      <div class="actions">
+        <button id="refreshButton" class="secondary" type="button">Refresh</button>
+        <button id="generateButton" class="primary" type="button">Generate</button>
+      </div>
+
+      <section id="statusPanel" class="status hidden" aria-live="assertive"></section>
+
+      <section id="resultPanel" class="result hidden">
+        <div class="score-row">
+          <div>
+            <p class="eyebrow">Recommendation</p>
+            <h2 id="recommendationLabel">Mixed</h2>
+          </div>
+          <div class="score"><span id="scoreValue">5</span><small>/10</small></div>
+        </div>
+        <p id="productSummary" class="summary"></p>
+        <p id="personaFit" class="fit"></p>
+        <div class="columns">
+          <div>
+            <h3>Strengths</h3>
+            <ul id="strengthsList"></ul>
+          </div>
+          <div>
+            <h3>Concerns</h3>
+            <ul id="concernsList"></ul>
+          </div>
+        </div>
+        <p id="groundingText" class="grounding"></p>
+      </section>
+    </main>
+    <script src="popup.js"></script>
+  </body>
+</html>

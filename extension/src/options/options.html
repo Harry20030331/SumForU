@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Summary for You Settings</title>
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <main class="page">
+      <header>
+        <p class="eyebrow">Summary for You</p>
+        <h1>Demo settings</h1>
+      </header>
+
+      <form id="settingsForm" class="panel">
+        <label>
+          <span>Default shopper persona</span>
+          <textarea id="personaInput" rows="5"></textarea>
+        </label>
+
+        <label>
+          <span>Backend URL</span>
+          <input id="backendUrlInput" type="url" placeholder="https://your-render-service.onrender.com" />
+        </label>
+
+        <div class="actions">
+          <button type="submit">Save settings</button>
+        </div>
+        <p id="statusText" class="status" aria-live="polite"></p>
+      </form>
+    </main>
+    <script src="options.js"></script>
+  </body>
+</html>

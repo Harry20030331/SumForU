@@ -110,6 +110,12 @@ SumForU/
 
 ## Quickstart
 
+### Chrome Extension Demo
+
+This repo also includes a Chrome extension demo under `extension/`. It lets a tester load an unpacked Manifest V3 extension, save a shopper persona once, open a product page, and generate a persona-aware buying summary through the Render-ready backend proxy in `server/`.
+
+See [`extension/README.md`](extension/README.md) for setup, demo pages, API-key handling, and Chrome Web Store caveats.
+
 ### 1. Clone & Environment
 
 ```bash

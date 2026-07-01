@@ -1,5 +1,7 @@
 __pycache__/
 .env
+.conda/
+.DS_Store
 data.json
 .vscode/
 .copilot/
