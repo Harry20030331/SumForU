@@ -2,6 +2,8 @@
 
 <img src="assets/banner.png" alt="SumForU Banner" width="800">
 
+Chrome Extension: [Install SumForU from the Chrome Web Store](https://chromewebstore.google.com/detail/sumforu/giilohlnioiocngbmbdjknpegjckoeeh?utm_source=ext_app_menu)
+
 ## Overview
 
 SumForU is an end-to-end project designed to generate persona-aware product summaries from customer reviews. Utilizing the Tinker platform [Tinker](https://tinker-docs.thinkingmachines.ai/) for advanced model training and inference, it integrates supervised fine-tuning (SFT) and reinforcement learning from AI feedback (RLAIF) to produce customized product briefings and suitability ratings tailored to individual shopper profiles. The project provides a full suite of tools for data preprocessing, synthesis, model evaluation, and experiment management, enabling researchers to build and assess personalized summarization systems efficiently.
@@ -113,6 +115,8 @@ SumForU/
 ### Chrome Extension Demo
 
 This repo also includes a Chrome extension demo under `extension/`. It lets a tester load an unpacked Manifest V3 extension, save a shopper persona once, open a product page, and generate a persona-aware buying summary through the Render-ready backend proxy in `server/`.
+
+Public Chrome Web Store listing: [SumForU](https://chromewebstore.google.com/detail/sumforu/giilohlnioiocngbmbdjknpegjckoeeh?utm_source=ext_app_menu)
 
 See [`extension/README.md`](extension/README.md) for setup, demo pages, API-key handling, and Chrome Web Store caveats.
 

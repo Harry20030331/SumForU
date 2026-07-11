@@ -20,7 +20,7 @@ test("buildSummaryPrompt asks for grounded JSON personalized to persona", () => 
 
   assert.match(prompt, /Budget-conscious student/);
   assert.match(prompt, /Do not invent/);
-  assert.match(prompt, /Sum for You/);
+  assert.match(prompt, /SumForU/);
   assert.match(prompt, /Keep the whole response compact/);
   assert.match(prompt, /2 or 3/);
   assert.match(prompt, /suitabilityScore/);

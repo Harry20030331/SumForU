@@ -2,6 +2,8 @@
 
 This folder contains a Chrome extension demo for persona-aware product summaries. It is separate from the research pipeline and calls the Sum for You backend proxy, which keeps the OpenAI API key on the server.
 
+Public listing: [SumForU on the Chrome Web Store](https://chromewebstore.google.com/detail/sumforu/giilohlnioiocngbmbdjknpegjckoeeh?utm_source=ext_app_menu)
+
 ## Load The Extension
 
 1. Open `chrome://extensions`.

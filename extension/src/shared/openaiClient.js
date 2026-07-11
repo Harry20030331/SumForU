@@ -1,7 +1,7 @@
 import { DEFAULT_MODEL, RECOMMENDATION_LABELS } from "./defaults.js";
 
 export function buildSummaryPrompt({ persona, context }) {
-  return `You are Sum for You, a shopping assistant that creates grounded, persona-aware product buying summaries.
+  return `You are SumForU, a shopping assistant that creates grounded, persona-aware product buying summaries.
 
 Shopper persona:
 ${persona}

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "Sum for You",
-  "description": "Persona-aware product buying summaries powered by OpenAI.",
+  "name": "SumForU",
+  "description": "Personal buying summaries for real product pages.",
   "version": "0.1.0",
   "permissions": ["activeTab", "scripting", "storage"],
   "icons": {
@@ -15,7 +15,7 @@
     "type": "module"
   },
   "action": {
-    "default_title": "Sum for You",
+    "default_title": "SumForU",
     "default_popup": "src/popup/popup.html"
   },
   "options_page": "src/options/options.html"

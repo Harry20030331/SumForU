@@ -6,7 +6,7 @@ import { stat } from "node:fs/promises";
 const manifest = JSON.parse(await readFile(new URL("../manifest.json", import.meta.url), "utf8"));
 
 test("manifest is ready for Chrome Web Store review", () => {
-  assert.equal(manifest.name, "Sum for You");
+  assert.equal(manifest.name, "SumForU");
   assert.deepEqual(manifest.permissions.sort(), ["activeTab", "scripting", "storage"]);
   assert.equal(manifest.host_permissions, undefined);
   assert.equal(manifest.content_scripts, undefined);

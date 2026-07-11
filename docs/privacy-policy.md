@@ -1,19 +1,19 @@
-# Sum for You Privacy Policy
+# SumForU Privacy Policy
 
 Last updated: July 1, 2026
 
-Sum for You is a Chrome extension that creates short, persona-aware buying summaries for product pages.
+SumForU is a Chrome extension that creates short, persona-aware buying summaries for product pages.
 
 ## Data We Process
 
-When you click Generate, Sum for You may process:
+When you click Generate, SumForU may process:
 
 - Text extracted from the active product page, such as product title, price, ratings, reviews, specs, warranty, and availability details.
 - The shopper persona you enter in the extension.
 - The current page URL and hostname.
 - An anonymous install ID used for rate limiting and abuse prevention.
 
-Sum for You does not collect your full browsing history, payment information, passwords, account credentials, or personal documents.
+SumForU does not collect your full browsing history, payment information, passwords, account credentials, or personal documents.
 
 ## How We Use Data
 
@@ -25,7 +25,7 @@ We use the data above only to:
 
 ## Data Sharing
 
-To generate a summary, Sum for You sends the extracted page evidence and shopper persona to the Sum for You backend API. The backend calls OpenAI to produce the summary.
+To generate a summary, SumForU sends the extracted page evidence and shopper persona to the SumForU backend API. The backend calls OpenAI to produce the summary.
 
 We do not sell user data. We do not use user data for advertising. We do not share user data for unrelated purposes.
 
